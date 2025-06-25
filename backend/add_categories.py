@@ -1,6 +1,6 @@
 import sqlite3
 
-connection = sqlite3.connect("data.db")
+connection = sqlite3.connect("./instance/data.db")
 cur = connection.cursor()
 
 # Insert categories

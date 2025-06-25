@@ -13,13 +13,15 @@ CREATE TABLE IF NOT EXISTS categories (
     image TEXT
 );
 
-CREATE TABLE IF NOT EXISTS places (
+CREATE TABLE places (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
     location TEXT,
     image TEXT,
     rating REAL,
+    latitude REAL,  
+    longitude REAL, 
     category_id INTEGER,
     FOREIGN KEY (category_id) REFERENCES categories (id)
 );

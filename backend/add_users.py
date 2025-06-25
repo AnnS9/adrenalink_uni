@@ -1,14 +1,14 @@
 import sqlite3
 from werkzeug.security import generate_password_hash
-# 1. Import the 'create_app' function from your main run.py file
+# Import the 'create_app' function from your main run.py file
 from run import create_app
 
 print("Starting add_users.py script...")
 
-# 2. Create an instance of your Flask app to get its context
+# Create an instance of your Flask app to get its context
 app = create_app()
 
-# 3. Use the application context to connect to the correct database
+# Use the application context to connect to the correct database
 with app.app_context():
     # Now that we have the context, we can import get_db
     from db import get_db
@@ -16,20 +16,49 @@ with app.app_context():
     # Get the database connection
     db = get_db()
     
-    # --- Your existing logic for adding users goes here ---
-    try:
-        print("Attempting to add admin user...")
-        admin_password = generate_password_hash('admin123')
+    # --- Data to be added ---
+    # You can easily add more users to this list
+    users_to_add = [
+        {
+            "username": "admin",
+            "email": "admin@adrenalink.com",
+            "password": "admin123", # Plain text password
+            "role": "admin"
+        },
+        {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "password123",
+            "role": "client"
+        }
+        # Add more user dictionaries here...
+    ]
+    
+    # --- Loop through the users and add them if they don't exist ---
+    for user_data in users_to_add:
+        email = user_data["email"]
         
-        db.execute(
-            "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-            ('admin', 'admin@adrenalink.com', admin_password, 'admin')
-        )
-        db.commit()
-        print("✅ Admin user added successfully.")
-    except sqlite3.IntegrityError:
-        print("⚠️ Admin user already exists, skipping.")
+        # 1. Check if a user with this email already exists
+        existing_user = db.execute(
+            "SELECT id FROM users WHERE email = ?", (email,)
+        ).fetchone()
         
-    # You can add more users here...
+        # 2. If no user is found, proceed with insertion
+        if existing_user is None:
+            print(f"Attempting to add user: {email}...")
+            
+            # Hash the password before storing it
+            hashed_password = generate_password_hash(user_data["password"])
+            
+            db.execute(
+                "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+                (user_data["username"], email, hashed_password, user_data["role"])
+            )
+            db.commit()
+            print(f"✅ User {email} added successfully.")
+        else:
+            # 3. If user already exists, skip them
+            print(f"⚠️ User with email {email} already exists, skipping.")
 
-print("add_users.py script finished.")
+print("\nadd_users.py script finished.")
+
