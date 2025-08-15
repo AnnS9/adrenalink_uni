@@ -1,0 +1,100 @@
+
+.auth-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+h2{
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.auth-modal {
+  background: #2C2A2A;
+  padding: 2rem;
+  border-radius: 12px;
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  font-family: 'Teko', sans-serif;
+  font-size: 22px;
+}
+@media (max-width: 600px) {
+  .auth-modal {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .close-btn {
+ position: absolute;
+  top: 5rem;
+  right: 1rem;
+  font-size: 2rem;
+  color: white;
+  background: rgba(0, 0, 0, 0.4); 
+  border: none;
+  border-radius: 50%;
+  padding: 0.5rem;
+  cursor: pointer;
+  z-index: 1100;
+  }
+}
+.auth-modal input{
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.close-btn {
+  position: absolute;
+  color: #fff;
+  right: 0.75rem;
+  font-size: 2.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.auth-modal input:focus {
+  box-shadow: 0 0 5px rgba(235, 9, 9, 0.3);
+  outline: none;
+}
+.auth-button {
+  width: 100%;
+  background-color: #000;
+  color: #fff;
+  padding: 10px 16px;
+  border-color: red;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 24px;
+  transition: background 0.3s;
+  font-family: 'Teko', sans-serif;
+}
+
+.auth-button:hover {
+  background-color: #222;
+}
+span{
+  color: rgb(238, 237, 231);
+  text-decoration-line: underline;
+  cursor: pointer;
+
+}
