@@ -1,11 +1,12 @@
 import os
 import sqlite3
-from flask import Flask, g, jsonify, request, current_app
+from auth import require_admin
+from flask import Flask, g, jsonify, request, current_app, session
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash
 from datetime import timedelta
 
-# This function will be imported by your blueprints.
+
 def get_db():
     if 'db' not in g:
         db_path = os.path.join(current_app.instance_path, 'data.db')
@@ -16,18 +17,19 @@ def get_db():
 # Main App Creation Factory
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    
-    # --- This is the corrected configuration ---
+
     app.config.from_mapping(
-        SECRET_KEY='Adrenaline25', # Change this for production
-        DATABASE=os.path.join(app.instance_path, 'data.db'), # This line has been restored
+        SECRET_KEY=os.getenv('FLASK_SECRET_KEY', 'your-default-secret-key'),
+        DATABASE=os.path.join(app.instance_path, 'data.db'),
     )
+
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    CORS(app, supports_credentials=True)
+    
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
     @app.teardown_appcontext
     def close_db(e=None):
@@ -35,7 +37,7 @@ def create_app():
         if db is not None:
             db.close()
 
-    # Import blueprints inside the factory to avoid circular imports
+    # Register blueprints
     with app.app_context():
         from db import init_app
         init_app(app)
@@ -45,7 +47,7 @@ def create_app():
         app.register_blueprint(auth_bp)
         app.register_blueprint(admin_bp)
 
-    # --- All Your Public Routes Restored ---
+    # Routes
     @app.route('/api/categories', methods=['GET'])
     def get_all_categories():
         db = get_db()
@@ -67,41 +69,103 @@ def create_app():
         places = db.execute("SELECT * FROM places WHERE category_id = ?", (id,)).fetchall()
         if category:
             return jsonify({
-                "id": category["id"],
-                "name": category["name"],
-                "image": category["image"],
-                "description": category["description"],
-                "places": [dict(p) for p in places]
+                "id": category["id"], "name": category["name"], "image": category["image"],
+                "description": category["description"], "places": [dict(p) for p in places]
             })
         return jsonify({"error": "Category not found"}), 404
-
-    @app.route('/api/signup', methods=['POST'])
-    def signup():
-        data = request.json
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-
-        if not all([username, email, password]):
-            return jsonify({"error": "Missing required fields"}), 400
-            
-        hashed_password = generate_password_hash(password)
-        role = data.get('role', 'client')
-
+    
+    @app.route('/api/user/<int:user_id>/favorites', methods=['POST'])
+    def add_favorite_place(user_id):
         db = get_db()
+        data = request.get_json()
+        place_id = data.get('placeId')
+
+        if not place_id:
+            return jsonify({'error': 'Missing placeId in request body'}), 400
+
         try:
+            
+            existing = db.execute(
+                "SELECT 1 FROM user_favorites WHERE user_id = ? AND place_id = ?",
+                (user_id, place_id)
+            ).fetchone()
+            if existing:
+                return jsonify({'message': 'Place already in favorites'}), 200
+
+            # Insert new favorite
             db.execute(
-                "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-                (username, email, hashed_password, role)
+                "INSERT INTO user_favorites (user_id, place_id) VALUES (?, ?)",
+                (user_id, place_id)
             )
             db.commit()
-            return jsonify({"message": "User registered successfully"}), 201
-        except sqlite3.IntegrityError:
-            return jsonify({"error": "Username or email already exists"}), 400
 
-    return app
+            return jsonify({'message': 'Place added to favorites'}), 201
 
-# To run the app: python run.py
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/place/<int:id>', methods=['GET'])
+    def get_place(id):
+        db = get_db()
+        place = db.execute("SELECT * FROM places WHERE id = ?", (id,)).fetchone()
+        if not place:
+            return jsonify({"error": f"Place with ID {id} not found"}), 404
+
+        reviews = db.execute("""
+            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
+            FROM reviews r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.place_id = ?
+            ORDER BY r.created_at DESC
+        """, (id,)).fetchall()
+        
+        return jsonify({**dict(place), "reviews": [dict(r) for r in reviews]})
+
+    @app.route('/api/place/<int:id>/review', methods=['POST'])
+    def add_review(id):
+        db = get_db()
+
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        data = request.get_json()
+        text = data.get('text')
+        rating = data.get('rating')
+
+        if not all([text, rating]):
+            return jsonify({'error': 'Incomplete review data'}), 400
+
+        # Insert new review
+        cursor = db.execute(
+            "INSERT INTO reviews (place_id, user_id, text, rating) VALUES (?, ?, ?, ?)",
+            (id, user_id, text, rating)
+        )
+        db.commit()
+        review_id = cursor.lastrowid  # get the ID of the inserted review
+
+        # Fetch the inserted review with username and timestamp
+        review = db.execute("""
+            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
+            FROM reviews r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.id = ?
+        """, (review_id,)).fetchone()
+
+        return jsonify(dict(review)), 201
+    
+    @app.route('/api/review/<int:review_id>', methods=['DELETE'])
+    @require_admin
+    def delete_review(review_id):
+        db = get_db()
+        db.execute("DELETE FROM reviews WHERE id = ?", (review_id,))
+        db.commit()
+        return jsonify({"message": "Review deleted"}), 200
+    
+    return app        
+# Main execution block
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True)
+
+

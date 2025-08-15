@@ -1,163 +1,247 @@
-from flask import Blueprint, jsonify, session, abort, request
-from functools import wraps
-from db import get_db
-from werkzeug.security import generate_password_hash
 import sqlite3
+from functools import wraps
+from typing import List, Tuple, Dict, Any
 
-admin_bp = Blueprint('admin', __name__)
+from flask import Blueprint, jsonify, request, session, abort
+from werkzeug.security import generate_password_hash
+
+from db import get_db
+
+# -----------------------------------------------------------------------------
+# Blueprint
+# -----------------------------------------------------------------------------
+admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 
 def admin_required(f):
+    """Decorator that ensures the requester has an admin role."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("role") != "admin":
-            abort(403)
+            abort(403)  # Forbidden
         return f(*args, **kwargs)
+
     return decorated_function
 
-# --- GET routes to fetch data for tables ---
 
-@admin_bp.route('/api/admin/users', methods=['GET'])
-@admin_required
-def get_all_users():
-    conn = get_db()
-    users = conn.execute("SELECT id, email, role FROM users ORDER BY id").fetchall()
-    users_list = [dict(user) for user in users]
-    return jsonify(users_list)
+def _error(message: str, status: int = 400):
+    """Consistent error response helper."""
+    return jsonify({"error": message}), status
 
-@admin_bp.route('/api/admin/places', methods=['GET'])
+
+def _validate_fields(data: Dict[str, Any], required: List[str]) -> Tuple[bool, List[str]]:
+    """Return True/[] if all required fields are present & non‑empty, else False/missing list."""
+    missing = [field for field in required if not data.get(field)]
+    return (len(missing) == 0, missing)
+
+
+# -----------------------------------------------------------------------------
+# READ (GET)
+# -----------------------------------------------------------------------------
+@admin_bp.route("/users", methods=["GET"])
 @admin_required
-def get_all_places():
-    conn = get_db()
-    places = conn.execute("""
-        SELECT p.id, p.name, p.location, p.latitude, p.longitude, c.name as category_name
+def get_users():
+    db = get_db()
+    users = db.execute(
+        "SELECT id, email, username, role FROM users ORDER BY id"
+    ).fetchall()
+    return jsonify([dict(row) for row in users])
+
+
+@admin_bp.route("/places", methods=["GET"])
+@admin_required
+def get_places():
+    db = get_db()
+    places = db.execute(
+        """
+        SELECT p.*, c.name AS category_name
         FROM places p
         LEFT JOIN categories c ON p.category_id = c.id
         ORDER BY p.id
-    """).fetchall()
-    places_list = [dict(place) for place in places]
-    return jsonify(places_list)
+        """
+    ).fetchall()
+    return jsonify([dict(row) for row in places])
 
-@admin_bp.route('/api/admin/categories', methods=['GET'])
+
+@admin_bp.route("/categories", methods=["GET"])
 @admin_required
-def get_all_categories():
-    conn = get_db()
-    categories = conn.execute("SELECT id, name FROM categories ORDER BY id").fetchall()
-    categories_list = [dict(category) for category in categories]
-    return jsonify(categories_list)
+def get_categories():
+    db = get_db()
+    cats = db.execute("SELECT * FROM categories ORDER BY id").fetchall()
+    return jsonify([dict(row) for row in cats])
 
-# --- POST routes to add new data ---
 
-@admin_bp.route('/api/admin/users', methods=['POST'])
+# -----------------------------------------------------------------------------
+# CREATE (POST)
+# -----------------------------------------------------------------------------
+@admin_bp.route("/users", methods=["POST"])
 @admin_required
 def add_user():
-    data = request.json
-    username = data.get('username')
-    email = data.get('email')
-    password = data.get('password')
-    role = data.get('role', 'client')
+    data = request.get_json(force=True, silent=True) or {}
+    required = ["username", "email", "password"]
+    ok, missing = _validate_fields(data, required)
+    if not ok:
+        return _error(f"Missing required field(s): {', '.join(missing)}")
 
-    if not all([username, email, password]):
-        return jsonify({"error": "Username, email, and password are required."}), 400
+    username, email, password = (
+        data["username"].strip(),
+        data["email"].strip(),
+        data["password"],
+    )
+    role = data.get("role", "client").strip() or "client"
 
-    hashed_password = generate_password_hash(password)
+    hashed_pw = generate_password_hash(password)
     db = get_db()
     try:
-        db.execute("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-                   (username, email, hashed_password, role))
+        db.execute(
+            "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
+            (username, email, hashed_pw, role),
+        )
         db.commit()
+        return jsonify({"message": "User added successfully."}), 201
     except sqlite3.IntegrityError:
-        return jsonify({"error": "User with this username or email already exists."}), 409
-    
-    return jsonify({"message": "User added successfully"}), 201
+        return _error("Username or email already exists", 409)
 
-@admin_bp.route('/api/admin/places', methods=['POST'])
-@admin_required
-def add_place():
-    data = request.json
-    db = get_db()
-    db.execute(
-        """INSERT INTO places (name, description, location, image, rating, category_id, latitude, longitude)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (data.get('name'), data.get('description'), data.get('location'), data.get('image'),
-         data.get('rating'), data.get('category_id'), data.get('latitude'), data.get('longitude'))
-    )
-    db.commit()
-    return jsonify({"message": "Place added successfully"}), 201
 
-@admin_bp.route('/api/admin/categories', methods=['POST'])
+@admin_bp.route("/categories", methods=["POST"])
 @admin_required
 def add_category():
-    data = request.json
-    name = data.get('name')
-    if not name:
-        return jsonify({"error": "Name is required."}), 400
+    data = request.get_json(force=True, silent=True) or {}
+    required = ["name"]
+    ok, missing = _validate_fields(data, required)
+    if not ok:
+        return _error(f"Missing required field(s): {', '.join(missing)}")
+
+    name = data["name"].strip()
+    description = data.get("description", "").strip() or None
+    image = data.get("image", "").strip() or None
+
     db = get_db()
     try:
-        db.execute("INSERT INTO categories (name, description, image) VALUES (?, ?, ?)",
-                   (name, data.get('description'), data.get('image')))
+        db.execute(
+            "INSERT INTO categories (name, description, image) VALUES (?, ?, ?)",
+            (name, description, image),
+        )
         db.commit()
+        return jsonify({"message": "Category added successfully."}), 201
     except sqlite3.IntegrityError:
-        return jsonify({"error": "A category with this name already exists."}), 409
-    return jsonify({"message": "Category added successfully"}), 201
+        return _error("Category name already exists", 409)
 
-# --- DELETE routes to remove data ---
 
-@admin_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_bp.route("/places", methods=["POST"])
 @admin_required
-def delete_user(user_id):
-    db = get_db()
-    db.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    db.commit()
-    return jsonify({"message": "User deleted successfully"}), 200
+def add_place():
+    data = request.get_json(force=True, silent=True) or {}
+    required = ["name", "category_id"]
+    ok, missing = _validate_fields(data, required)
+    if not ok:
+        return _error(f"Missing required field(s): {', '.join(missing)}")
 
-@admin_bp.route('/api/admin/places/<int:place_id>', methods=['DELETE'])
-@admin_required
-def delete_place(place_id):
-    db = get_db()
-    db.execute("DELETE FROM places WHERE id = ?", (place_id,))
-    db.commit()
-    return jsonify({"message": "Place deleted successfully"}), 200
+    fields = (
+        data["name"].strip(),
+        data.get("description", "").strip() or None,
+        data.get("location", "").strip() or None,
+        data.get("image", "").strip() or None,
+        float(data.get("rating")) if data.get("rating") else None,
+        float(data.get("latitude")) if data.get("latitude") else None,
+        float(data.get("longitude")) if data.get("longitude") else None,
+        int(data["category_id"]),
+    )
 
-@admin_bp.route('/api/admin/categories/<int:category_id>', methods=['DELETE'])
-@admin_required
-def delete_category(category_id):
     db = get_db()
-    db.execute("DELETE FROM categories WHERE id = ?", (category_id,))
-    db.commit()
-    return jsonify({"message": "Category deleted successfully"}), 200
+    # Ensure the referenced category exists
+    category = db.execute(
+        "SELECT id FROM categories WHERE id = ?", (fields[-1],)
+    ).fetchone()
+    if category is None:
+        return _error("Category not found", 404)
 
-# --- PUT routes to update data ---
-
-@admin_bp.route('/api/admin/users/<int:user_id>', methods=['PUT'])
-@admin_required
-def update_user(user_id):
-    data = request.json
-    db = get_db()
-    db.execute("UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?",
-               (data['username'], data['email'], data['role'], user_id))
-    db.commit()
-    return jsonify({"message": "User updated successfully"}), 200
-
-@admin_bp.route('/api/admin/places/<int:place_id>', methods=['PUT'])
-@admin_required
-def update_place(place_id):
-    data = request.json
-    db = get_db()
     db.execute(
-        """UPDATE places SET name = ?, description = ?, location = ?, image = ?,
-           rating = ?, category_id = ?, latitude = ?, longitude = ? WHERE id = ?""",
-        (data['name'], data['description'], data['location'], data['image'],
-         data['rating'], data['category_id'], data['latitude'], data['longitude'], place_id)
+        """
+        INSERT INTO places
+        (name, description, location, image, rating, latitude, longitude, category_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        fields,
     )
     db.commit()
-    return jsonify({"message": "Place updated successfully"}), 200
+    return jsonify({"message": "Place added successfully."}), 201
 
-@admin_bp.route('/api/admin/categories/<int:category_id>', methods=['PUT'])
-@admin_required
-def update_category(category_id):
-    data = request.json
+
+# -----------------------------------------------------------------------------
+# UPDATE (PUT)
+# -----------------------------------------------------------------------------
+
+def _generic_update(table: str, item_id: int, data: Dict[str, Any]):
+    if not data:
+        return _error("No data provided for update")
+
     db = get_db()
-    db.execute("UPDATE categories SET name = ?, description = ?, image = ? WHERE id = ?",
-               (data['name'], data['description'], data['image'], category_id))
+    keys = list(data.keys())
+    values = [data[k] for k in keys] + [item_id]
+    set_clause = ", ".join(f"{k} = ?" for k in keys)
+
+    try:
+        db.execute(f"UPDATE {table} SET {set_clause} WHERE id = ?", values)
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        return _error(str(e), 409)
+
+    return jsonify({"message": f"{table.rstrip('s').capitalize()} updated."})
+
+
+@admin_bp.route("/users/<int:item_id>", methods=["PUT"])
+@admin_required
+def update_user(item_id):
+    data = request.get_json(force=True, silent=True) or {}
+    if "password" in data:
+        data["password"] = generate_password_hash(data["password"])
+    return _generic_update("users", item_id, data)
+
+
+@admin_bp.route("/categories/<int:item_id>", methods=["PUT"])
+@admin_required
+def update_category(item_id):
+    data = request.get_json(force=True, silent=True) or {}
+    return _generic_update("categories", item_id, data)
+
+
+@admin_bp.route("/places/<int:item_id>", methods=["PUT"])
+@admin_required
+def update_place(item_id):
+    data = request.get_json(force=True, silent=True) or {}
+    return _generic_update("places", item_id, data)
+
+
+# -----------------------------------------------------------------------------
+# DELETE
+# -----------------------------------------------------------------------------
+
+@admin_bp.route("/users/<int:item_id>", methods=["DELETE"])
+@admin_required
+def delete_user(item_id):
+    db = get_db()
+    db.execute("DELETE FROM users WHERE id = ?", (item_id,))
     db.commit()
-    return jsonify({"message": "Category updated successfully"}), 200
+    return jsonify({"message": "User deleted."})
+
+
+@admin_bp.route("/categories/<int:item_id>", methods=["DELETE"])
+@admin_required
+def delete_category(item_id):
+    db = get_db()
+    db.execute("DELETE FROM categories WHERE id = ?", (item_id,))
+    db.commit()
+    return jsonify({"message": "Category deleted."})
+
+
+@admin_bp.route("/places/<int:item_id>", methods=["DELETE"])
+@admin_required
+def delete_place(item_id):
+    db = get_db()
+    db.execute("DELETE FROM places WHERE id = ?", (item_id,))
+    db.commit()
+    return jsonify({"message": "Place deleted."})
