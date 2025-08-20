@@ -12,21 +12,12 @@ function AdminPanel() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentItem, setCurrentItem] = useState(null);
 
-    /**
-     * Reusable fetch for any tab.
-     * Uses **relative URLs** and `credentials: 'include'` so the session cookie travels.
-     */
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/admin/${activeTab}`, {
-                credentials: 'include'
-            });
-            if (!response.ok) {
-                // The error from the server (e.g., 403) will be caught here
-                throw new Error(`Failed to load data. Status: ${response.status}`);
-            }
+            const response = await fetch(`/api/admin/${activeTab}`, { credentials: 'include' });
+            if (!response.ok) throw new Error(`Failed to load data. Status: ${response.status}`);
             const result = await response.json();
             setData(result);
         } catch (err) {
@@ -62,9 +53,7 @@ function AdminPanel() {
                     method: 'DELETE',
                     credentials: 'include'
                 });
-                if (!response.ok) {
-                    throw new Error('Failed to delete item.');
-                }
+                if (!response.ok) throw new Error('Failed to delete item.');
                 fetchData(); 
             } catch (err) {
                 setError(err.message);
@@ -75,26 +64,72 @@ function AdminPanel() {
     const renderTableHeaders = () => {
         switch (activeTab) {
             case 'users':
-                return <tr><th>ID</th><th>Email</th><th>Username</th><th>Role</th><th>Actions</th></tr>;
+                return (
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                );
             case 'places':
-                return <tr><th>ID</th><th>Name</th><th>Category</th><th>Location</th><th>Actions</th></tr>;
+                return (
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Rating</th>
+                        <th>Image</th>
+                        <th>Category</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                );
             case 'categories':
-                return <tr><th>ID</th><th>Name</th><th>Actions</th></tr>;
+                return (
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                );
             default:
                 return null;
         }
     };
-    
+
     const renderTableRows = () => {
         if (!data || data.length === 0) {
-            return <tr><td colSpan="5">No data available.</td></tr>;
+            const colSpan = activeTab === 'places' ? 10 : activeTab === 'users' ? 5 : 3;
+            return <tr><td colSpan={colSpan}>No data available.</td></tr>;
         }
-        
+
         return data.map(item => (
             <tr key={item.id}>
-                {activeTab === 'users' && <><td>{item.id}</td><td>{item.email}</td><td>{item.username}</td><td>{item.role}</td></>}
-                {activeTab === 'places' && <><td>{item.id}</td><td>{item.name}</td><td>{item.category_name || 'N/A'}</td><td>{item.location}</td></>}
-                {activeTab === 'categories' && <><td>{item.id}</td><td>{item.name}</td></>}
+                {activeTab === 'users' && <>
+                    <td>{item.id}</td>
+                    <td>{item.email}</td>
+                    <td>{item.username}</td>
+                    <td>{item.role}</td>
+                </>}
+                {activeTab === 'places' && <>
+                    <td>{item.id}</td>
+                    <td>{item.name}</td>
+                    <td>{item.location}</td>
+                    <td>{item.rating}</td>
+                    <td>{item.image ? <img src={item.image} alt={item.name} className="table-image" /> : 'N/A'}</td>
+                    <td>{item.category_name || item.category_id || 'N/A'}</td>
+                    <td>{item.latitude || 'N/A'}</td>
+                    <td>{item.longitude || 'N/A'}</td>
+                    <td>{item.description || 'N/A'}</td>
+                </>}
+                {activeTab === 'categories' && <>
+                    <td>{item.id}</td>
+                    <td>{item.name}</td>
+                </>}
                 <td>
                     <button className="edit-btn" onClick={() => openEditModal(item)}>Edit</button>
                     <button className="delete-btn" onClick={() => handleDelete(item.id)}>Delete</button>

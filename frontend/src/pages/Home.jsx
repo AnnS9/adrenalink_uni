@@ -15,7 +15,7 @@ export default function Home() {
   return (
      <div className="container">
       <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
-      <h1>My adrenaline is</h1>
+      <h1>Pick Your Adrenaline</h1>
       <div className="grid">
         {sportsCategories.map(({ id, name, image }) => (
           <Link to={`/category/${id}`} key={id}>

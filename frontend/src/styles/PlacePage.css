@@ -35,12 +35,16 @@
   justify-content: flex-end;
   margin-bottom: 1rem;
 }
-
-.map-button-container {
+.map-button-container-horizontal {
   display: flex;
-  flex-direction: column;  
-  align-items:end;     
-  gap: 4px;                
+  gap: 12px; /* space between buttons */
+  justify-content: flex-end; /* align buttons to the right */
+}
+
+.map-button-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .map-button-label {
@@ -50,7 +54,7 @@
 }
 
 .map-toggle-icon {
-  background-color: #121212;
+  background-color: #292929;
   color: white;
   border: 2px solid red;
   border-radius: 10%;
@@ -61,6 +65,7 @@
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease, transform 0.1s ease;
+  
 }
 
 .map-toggle-label {
@@ -105,15 +110,15 @@
 
 /* Buttons */
 .add-to-track-btn {
-  background-color: #ed0000;
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 10px 18px;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  background: #e60000;
   border: none;
-  border-radius: 8px;
-  margin-top: 0.5rem;
+  border-radius: 4px;
+  color: white;
   cursor: pointer;
+  font-family: 'Teko', sans-serif;
+  font-size: 20px;
   transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
@@ -189,18 +194,20 @@ textarea:focus {
 }
 
 .submit-review {
-  background-color: #ed0000;
-  color: #121212;
-  border: none;
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem 1rem;
   font-weight: bold;
-  border-radius: 8px;
+  background: #e60000;
+  border: none;
+  border-radius: 4px;
+  color: white;
   cursor: pointer;
+  font-family: 'Teko', sans-serif;
+  font-size: 20px;
   transition: background-color 0.2s, transform 0.15s;
 }
 
 .submit-review:hover {
-  background-color: #ff3333;
+  background-color: #d12525;
   transform: translateY(-1px);
 }
 

@@ -48,7 +48,10 @@ export default function CategoryPage() {
           {showMap ? 'Hide Map' : 'View Map'}
         </button>
 
-        <button onClick={() => navigate('/community')}>AdrenaTribe Community</button>
+        {/* Fixed: Redirect to general Community page */}
+        <button onClick={() => navigate('/community')}>
+          AdrenaTribe Community
+        </button>
       </div>
 
       {showMap && <CategoryMap places={category.places} />}
@@ -73,3 +76,4 @@ export default function CategoryPage() {
     </div>
   );
 }
+
