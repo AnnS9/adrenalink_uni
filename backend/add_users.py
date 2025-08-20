@@ -24,12 +24,12 @@ with app.app_context():
             "password": "admin123", 
             "role": "admin"
         },
-        #{
-       #     "username": "testuser",
-       #     "email": "test@example.com",
-       #     "password": "password123",
-       #     "role": "client"
-        #}
+        {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "password123",
+            "role": "client"
+        }
         # Add more user dictionaries here...
     ]
     
