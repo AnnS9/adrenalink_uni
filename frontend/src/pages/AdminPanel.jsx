@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/AdminPanel.css'; 
 import AddDataModal from '../components/AddDataModal';
-import EditDataModal from '../components/EditDataModal';
 
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState('users');
@@ -108,31 +107,31 @@ function AdminPanel() {
         }
 
         return data.map(item => (
-            <tr key={item.id}>
+            <tr key={item.id || item._id}>
                 {activeTab === 'users' && <>
-                    <td>{item.id}</td>
+                    <td>{item.id || item._id}</td>
                     <td>{item.email}</td>
                     <td>{item.username}</td>
                     <td>{item.role}</td>
                 </>}
                 {activeTab === 'places' && <>
-                    <td>{item.id}</td>
+                    <td>{item.id || item._id}</td>
                     <td>{item.name}</td>
                     <td>{item.location}</td>
                     <td>{item.rating}</td>
                     <td>{item.image ? <img src={item.image} alt={item.name} className="table-image" /> : 'N/A'}</td>
-                    <td>{item.category_name || item.category_id || 'N/A'}</td>
+                    <td>{item.category_id || 'N/A'}</td>
                     <td>{item.latitude || 'N/A'}</td>
                     <td>{item.longitude || 'N/A'}</td>
                     <td>{item.description || 'N/A'}</td>
                 </>}
                 {activeTab === 'categories' && <>
-                    <td>{item.id}</td>
+                    <td>{item.id || item._id}</td>
                     <td>{item.name}</td>
                 </>}
                 <td>
                     <button className="edit-btn" onClick={() => openEditModal(item)}>Edit</button>
-                    <button className="delete-btn" onClick={() => handleDelete(item.id)}>Delete</button>
+                    <button className="delete-btn" onClick={() => handleDelete(item.id || item._id)}>Delete</button>
                 </td>
             </tr>
         ));
@@ -164,8 +163,125 @@ function AdminPanel() {
                 )}
             </div>
 
-            {isAddModalOpen && <AddDataModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} activeTab={activeTab} onSuccess={handleAddSuccess} />}
-            {isEditModalOpen && <EditDataModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} activeTab={activeTab} itemToEdit={currentItem} onSuccess={handleEditSuccess} />}
+            {isAddModalOpen && (
+                <AddDataModal 
+                    isOpen={isAddModalOpen} 
+                    onClose={() => setIsAddModalOpen(false)} 
+                    activeTab={activeTab} 
+                    onSuccess={handleAddSuccess} 
+                />
+            )}
+
+            {isEditModalOpen && (
+                <EditDataModal 
+                    isOpen={isEditModalOpen} 
+                    onClose={() => setIsEditModalOpen(false)} 
+                    activeTab={activeTab} 
+                    itemToEdit={currentItem} 
+                    onSuccess={handleEditSuccess} 
+                />
+            )}
+        </div>
+    );
+}
+
+/*   EditDataModal */
+function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        if (itemToEdit) setFormData(itemToEdit);
+    }, [itemToEdit]);
+
+    if (!isOpen) return null;
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async () => {
+        try {
+            const response = await fetch(`/api/admin/${activeTab}/${itemToEdit.id || itemToEdit._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(formData),
+            });
+            if (!response.ok) throw new Error("Failed to update item");
+            onSuccess();
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    const renderFields = () => {
+        switch (activeTab) {
+            case "users":
+                return (
+                    <>
+                        <label>Email</label>
+                        <input name="email" value={formData.email || ""} onChange={handleChange} />
+
+                        <label>Username</label>
+                        <input name="username" value={formData.username || ""} onChange={handleChange} />
+
+                        <label>Role</label>
+                        <input name="role" value={formData.role || ""} onChange={handleChange} />
+                    </>
+                );
+            case "places":
+                return (
+                    <>
+                        <label>Name</label>
+                        <input name="name" value={formData.name || ""} onChange={handleChange} />
+
+                        <label>Location</label>
+                        <input name="location" value={formData.location || ""} onChange={handleChange} />
+
+                        <label>Rating</label>
+                        <input name="rating" type="number" value={formData.rating || ""} onChange={handleChange} />
+
+                        <label>Image URL</label>
+                        <input name="image" value={formData.image || ""} onChange={handleChange} />
+
+                        <label>Category ID</label>
+                        <input name="category_id" value={formData.category_id || ""} onChange={handleChange} />
+
+                        <label>Latitude</label>
+                        <input name="latitude" value={formData.latitude || ""} onChange={handleChange} />
+
+                        <label>Longitude</label>
+                        <input name="longitude" value={formData.longitude || ""} onChange={handleChange} />
+
+                        <label>Description</label>
+                        <textarea name="description" value={formData.description || ""} onChange={handleChange} />
+                    </>
+                );
+            case "categories":
+                return (
+                    <>
+                        <label>Name</label>
+                        <input name="name" value={formData.name || ""} onChange={handleChange} />
+                    </>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal">
+                <h2>Edit {activeTab.slice(0, -1)}</h2>
+                <form onSubmit={(e) => e.preventDefault()}>
+                    {renderFields()}
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleSubmit}>Save</button>
+                        <button type="button" onClick={onClose}>Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

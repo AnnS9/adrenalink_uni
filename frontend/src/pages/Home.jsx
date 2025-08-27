@@ -1,23 +1,63 @@
-import { Link } from 'react-router-dom';
-import '../styles/global.css';
-
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../styles/global.css";
 
 export default function Home() {
-  const sportsCategories = [
-   { id: 1, name: 'Mountain Biking', image: '/images/mountain_biking.jpg' },
-  { id: 2, name: 'Surfing', image: '/images/surfing.jpg' },
-  { id: 3, name: 'Kitesurfing', image: '/images/kitesurfing.jpg' },
-  { id: 4, name: 'Snowboarding', image: '/images/snowboard.jpg' },
-  { id: 5, name: 'Ziplining', image: '/images/zipline.jpg' },
-  { id: 6, name: 'Rock Climbing', image: '/images/climb.jpg' },
+  const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [promoIndex, setPromoIndex] = useState(0);
+  const navigate = useNavigate();
+
+  const promoTexts = [
+    "Find your next adventure ",
+    "Discover adrenaline spots ",
+    "Track your favorite places ",
   ];
 
+  useEffect(() => {
+    // Fetch categories from backend
+    fetch("http://localhost:5000/api/categories")
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    // Rotate promo text every 3 seconds
+    const interval = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % promoTexts.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+  };
+
   return (
-     <div className="container">
+    <div className="container">
       <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
       <h1>Pick Your Adrenaline</h1>
+
+      {/* --- Rotating Promo Text --- */}
+      <p className="promo-text">{promoTexts[promoIndex]}</p>
+
+      {/* --- Search Bar --- */}
+      <form onSubmit={handleSearch} className="search-bar">
+        <input
+          type="text"
+          placeholder="Search categories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      {/* --- Category Tiles --- */}
       <div className="grid">
-        {sportsCategories.map(({ id, name, image }) => (
+        {categories.map(({ id, name, image }) => (
           <Link to={`/category/${id}`} key={id}>
             <div className="tile">
               <img src={image} alt={name} />

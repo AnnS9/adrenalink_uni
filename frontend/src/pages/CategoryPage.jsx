@@ -27,6 +27,12 @@ export default function CategoryPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // ⭐ star renderer
+  const renderStars = (value = 0) =>
+    [...Array(5)].map((_, i) => (
+      <span key={i} style={{ color: i < value ? '#ed0000' : '#ccc' }}>★</span>
+    ));
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!category) return <div>No category data found.</div>;
@@ -35,9 +41,9 @@ export default function CategoryPage() {
     <div className="category-page">
       <div
         className="hero-image"
-        style={{ backgroundImage: `url(${category.image})` }}
+        style={{ backgroundImage: `url(${category.image || ''})` }}
       >
-        <h1 className="hero-title">{category.name.toUpperCase()}</h1>
+        <h1 className="hero-title">{category.name?.toUpperCase()}</h1>
       </div>
 
       <div className="action-buttons">
@@ -48,32 +54,35 @@ export default function CategoryPage() {
           {showMap ? 'Hide Map' : 'View Map'}
         </button>
 
-        {/* Fixed: Redirect to general Community page */}
         <button onClick={() => navigate('/community')}>
           AdrenaTribe Community
         </button>
       </div>
 
-      {showMap && <CategoryMap places={category.places} />}
+      {showMap && <CategoryMap places={category.places || []} />}
 
       <div className="places-list">
-        {category.places?.map((place) => (
+        {category.places?.map((place, index) => (
           <div
             className="place-card"
-            key={place.id}
-            onClick={() => navigate(`/place/${place.id}`)}
+            key={place.id || index}  // fallback if id missing
+            onClick={() => navigate(`/place/${place.id || index}`)}
             style={{ cursor: 'pointer' }}
           >
-            <img src={place.image} alt={place.name} />
+            <img src={place.image || '/images/default.jpg'} alt={place.name || 'Unknown'} />
             <div className="place-info">
-              <h3>{place.name}</h3>
-              <p>{place.location}</p>
-              <p>⭐ {place.rating}</p>
+              <h3>{place.name || 'Unnamed Place'}</h3>
+              <p>{place.location || 'Unknown location'}</p>
+              <div className="rating-stars">
+                {renderStars(Math.round(place.rating || 0))}
+                <span style={{ marginLeft: 6, color: '#666' }}>
+                  ({place.rating ? place.rating.toFixed(1) : "0.0"})
+                </span>
+              </div>
             </div>
           </div>
-        ))}
+        )) || <p>No places found in this category.</p>}
       </div>
     </div>
   );
 }
-

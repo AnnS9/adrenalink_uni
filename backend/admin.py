@@ -57,7 +57,7 @@ def get_places():
     db = get_db()
     places = db.execute(
         """
-        SELECT p.*, c.name AS category_name
+        SELECT p.*, c.name AS category_id
         FROM places p
         LEFT JOIN categories c ON p.category_id = c.id
         ORDER BY p.id

@@ -8,7 +8,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import 'leaflet/dist/leaflet.css';
 import '../styles/PlacePage.css';
 
-// Custom Leaflet marker fix
 const customMarkerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
@@ -28,23 +27,19 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
 
   useEffect(() => {
     fetch(`/api/place/${id}`, { credentials: 'include' })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setPlace(data);
         if (data.is_favorited) setIsFavorited(true);
       })
-      .catch((err) => console.error('Failed to fetch place:', err));
+      .catch(err => console.error('Failed to fetch place:', err));
   }, [id]);
-
-
-  
 
   const handleAddToTrack = async () => {
     if (!isLoggedIn) {
       toast.info('You must be logged in to add to track.');
       return;
     }
-
     try {
       const response = await fetch(`/api/user/favorites`, {
         method: 'POST',
@@ -52,12 +47,10 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         credentials: 'include',
         body: JSON.stringify({ placeId: id }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to add to track');
       }
-
       setIsFavorited(true);
       toast.success('Place added to your track!');
     } catch (error) {
@@ -71,7 +64,17 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       return;
     }
 
-    const newReview = { text: reviewText, rating };
+    if (!reviewText.trim()) {
+      toast.error('Please enter a review.');
+      return;
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      toast.error('Please select a rating between 1 and 5.');
+      return;
+    }
+
+    const newReview = { text: reviewText.trim(), rating };
 
     try {
       const res = await fetch(`/api/place/${id}/review`, {
@@ -80,24 +83,32 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         credentials: 'include',
         body: JSON.stringify(newReview),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to submit review.');
+      }
+
       const savedReview = await res.json();
 
-      const enrichedReview = {
-        ...savedReview,
-        author: savedReview.author || currentUser?.username || 'Anonymous',
-        created_at: savedReview.created_at || new Date().toISOString(),
-      };
+      savedReview.rating = Number(savedReview.rating);
+      savedReview.author = savedReview.author || currentUser?.username || 'Anonymous';
+      savedReview.created_at = savedReview.created_at || new Date().toISOString();
 
-      setPlace((prev) => ({
-        ...prev,
-        reviews: [enrichedReview, ...(prev.reviews || [])],
-      }));
+      setPlace(prev => {
+        const updatedReviews = [savedReview, ...(prev.reviews || [])];
+        const avgRating =
+          updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
+          updatedReviews.length;
+
+        return { ...prev, reviews: updatedReviews, rating: avgRating };
+      });
 
       setRating(0);
       setReviewText('');
       toast.success('Review submitted!');
     } catch (err) {
-      toast.error('Failed to submit review.');
+      toast.error(err.message);
       console.error(err);
     }
   };
@@ -105,28 +116,30 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const handleDeleteReview = (reviewId) => {
     if (!window.confirm('Delete this review?')) return;
 
-    fetch(`/api/review/${reviewId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
-      .then((res) => {
+    fetch(`/api/review/${reviewId}`, { method: 'DELETE', credentials: 'include' })
+      .then(res => {
         if (res.ok) {
-          setPlace((prev) => ({
-            ...prev,
-            reviews: prev.reviews.filter((r) => r.id !== reviewId),
-          }));
+          setPlace(prev => {
+            const updatedReviews = prev.reviews.filter(r => r.id !== reviewId);
+            const avgRating =
+              updatedReviews.length > 0
+                ? updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
+                  updatedReviews.length
+                : 0;
+            return { ...prev, reviews: updatedReviews, rating: avgRating };
+          });
           toast.success('Review deleted.');
         } else {
           toast.error('Failed to delete review.');
         }
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('Delete failed:', err);
         toast.error('Failed to delete review.');
       });
   };
 
-  const renderStars = (value) => (
+  const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar
         key={i}
@@ -134,17 +147,14 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         size={16}
         style={{ marginRight: 2 }}
       />
-    ))
-  );
+    ));
 
   if (!place) return <div>Loading...</div>;
 
   return (
     <div className="place-page">
       <header className="header">
-        <button className="back-button" onClick={() => window.history.back()}>
-          &larr; Back
-        </button>
+        <button className="back-button" onClick={() => window.history.back()}>Back</button>
       </header>
 
       <div className="image-container">
@@ -152,56 +162,39 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         <div className="place-details">
           <div className="map-button-container-horizontal">
             <div className="map-button-item">
-              <button
-                className="map-toggle-icon"
-                onClick={() => setShowMap(!showMap)}
-                title={showMap ? 'Hide Map' : 'View Map'}
-              >
+              <button className="map-toggle-icon" onClick={() => setShowMap(!showMap)} title={showMap ? 'Hide Map' : 'View Map'}>
                 <FaArrowsAlt />
               </button>
-              <div className="map-toggle-label">
-                {showMap ? 'Hide Map' : 'View Map'}
-              </div>
+              <div className="map-toggle-label">{showMap ? 'Hide Map' : 'View Map'}</div>
             </div>
-
             {isLoggedIn && (
-              <div className="map-button-item">
-                <button
-                  className="map-toggle-icon"
-                  onClick={handleAddToTrack}
-                  title={isFavorited ? 'Already in Track' : 'Add to Favorites'}
-                  disabled={isFavorited}
-                >
-                  <FaPlus color={isFavorited ? 'green' : 'black'} />
+              <div className="track-button-item">
+                <button className="track-icon" onClick={handleAddToTrack} title={isFavorited ? 'Already in Track' : 'Add to Tracks'} disabled={isFavorited}>
+                  <FaPlus color={isFavorited ? 'yellow' : 'white'} />
                 </button>
-                <div className="map-toggle-label">
-                  {isFavorited ? 'In Track' : 'Add to Favorites'}
-                </div>
+                <div className="track-label">{isFavorited ? 'In Track' : 'Add to Tracks'}</div>
               </div>
             )}
           </div>
 
           <h2 className="placename">{place.name}</h2>
-          <p>{renderStars(place.rating)}</p>
+          <div className="rating-display">
+            {renderStars(Math.round(place.rating || 0))}
+            <span style={{ marginLeft: 6, color: '#666' }}>({place.rating?.toFixed(1) || "0.0"})</span>
+          </div>
           <p className="address">{place.location}</p>
           <p className="description">{place.description}</p>
 
           {showMap && place.latitude && place.longitude && (
             <div className="map-container" style={{ height: '300px', width: '100%' }}>
-              <MapContainer
-                center={[place.latitude, place.longitude]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-              >
+              <MapContainer center={[place.latitude, place.longitude]} zoom={13} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
                 />
                 <Marker position={[place.latitude, place.longitude]} icon={customMarkerIcon}>
                   <Popup>
-                    <div className="popup-header">
-                      <strong>{place.name}</strong>
-                    </div>
+                    <div className="popup-header"><strong>{place.name}</strong></div>
                     <p>{place.description || place.location}</p>
                   </Popup>
                 </Marker>
@@ -218,49 +211,23 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
           <div className="review-form">
             <div className="rating-input">
               Rate this location:{' '}
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  onClick={() => setRating(star)}
-                  style={{
-                    color: star <= rating ? '#ed0000' : '#ccc',
-                    cursor: 'pointer',
-                    fontSize: '1.5rem',
-                  }}
-                >
-                  ★
-                </span>
+              {[1,2,3,4,5].map(star => (
+                <span key={star} onClick={() => setRating(star)} style={{ color: star <= rating ? '#ed0000' : '#ccc', cursor: 'pointer', fontSize: '1.5rem' }}>★</span>
               ))}
             </div>
-            <textarea
-              placeholder="Write a review..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-            />
-            <button className="submit-review" onClick={handleSubmitReview}>
-              Submit
-            </button>
+            <textarea placeholder="Write a review..." value={reviewText} onChange={e => setReviewText(e.target.value)} />
+            <button className="submit-review" onClick={handleSubmitReview}>Submit</button>
           </div>
-        ) : (
-          <p className="login-warning">You must be logged in to leave a review.</p>
-        )}
+        ) : <p className="login-warning">You must be logged in to leave a review.</p>}
 
         <div className="reviews-list">
-          {place.reviews.map((review) => (
+          {place.reviews.map(review => (
             <div key={review.id} className="review">
               <strong>{review.author ?? 'Anonymous'}</strong>
-              <div className="review-stars">{renderStars(review.rating)}</div>
+              <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
               <p>{review.text}</p>
               <small>{new Date(review.created_at).toLocaleDateString()}</small>
-
-              {userRole === 'admin' && (
-                <button
-                  className="delete-review"
-                  onClick={() => handleDeleteReview(review.id)}
-                >
-                  Delete
-                </button>
-              )}
+              {userRole === 'admin' && <button className="delete-review" onClick={() => handleDeleteReview(review.id)}>Delete</button>}
             </div>
           ))}
         </div>
@@ -268,3 +235,4 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     </div>
   );
 }
+

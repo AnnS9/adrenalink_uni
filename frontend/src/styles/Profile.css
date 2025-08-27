@@ -94,22 +94,24 @@
 }
 
 .location-pin-icon {
-  width: 1em;  /* Makes the icon scale with the font size */
+  width: 1em;  
   height: 1em;
-  fill: #e60000; /* Red color to match the theme */
+  fill: #e60000; 
 }
-/* General Styling & Container */
+
+/* Edit Profile */
 .edit-profile-container {
   background-color: #000;
   color: white;
   min-height: 100vh;
   font-family: sans-serif;
+  margin-top:2rem;
   padding: 1rem;
   font-size: 20px;
   font-family: 'Teko', sans-serif;
 }
 
-/* Header */
+
 .edit-profile-header {
   display: flex;
   align-items: center;
@@ -119,11 +121,18 @@
 }
 
 .back-button {
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem; 
   background: none;
   border: none;
   color: white;
   cursor: pointer;
+  background-color: #e60000;
+}
+
+.back-button:hover{
+
+  background-color: #2e2d2d;
+  
 }
 
 .header-title {

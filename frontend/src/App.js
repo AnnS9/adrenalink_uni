@@ -16,6 +16,7 @@ import ProfilePage from './pages/ProfilePage';
 import EditProfile from './pages/EditProfile';
 import Tracks from './pages/Tracks';
 import Community from "./pages/Community";
+import SearchResults from "./pages/SearchResults";
 
 // --- useAuth Hook ---
 const useAuth = () => {
@@ -125,7 +126,7 @@ function AppContent() {
               isAuthLoading ? <div>Loading...</div> : isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />
             }
           />
-
+          <Route path="/search" element={<SearchResults />} />
           <Route
             path="/adminpanel"
             element={

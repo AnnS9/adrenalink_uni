@@ -82,7 +82,7 @@ export default function EditProfile() {
     <div className="edit-profile-container">
       <header className="edit-profile-header">
         <button onClick={() => navigate(-1)} className="back-button">
-          &lt; Back
+           Back
         </button>
         <h1 className="header-title">
           ADRENA<span className="header-title-brand">ID</span>

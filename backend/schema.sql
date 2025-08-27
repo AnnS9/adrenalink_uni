@@ -67,3 +67,5 @@ CREATE TABLE IF NOT EXISTS posts (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
+ALTER TABLE places ADD COLUMN rating REAL DEFAULT 0;
+ALTER TABLE places ADD COLUMN review_count INTEGER DEFAULT 0;

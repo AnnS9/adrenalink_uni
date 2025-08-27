@@ -4,6 +4,10 @@ from flask import Flask, g, jsonify, request, current_app, session
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
+from sentence_transformers import SentenceTransformer, util
+import torch
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # --- Database ---
 def get_db():
@@ -60,7 +64,20 @@ def create_app():
     def get_places():
         db = get_db()
         places = db.execute("SELECT * FROM places").fetchall()
-        return jsonify([dict(row) for row in places])
+        places_with_ratings = []
+        for p in places:
+            avg_rating_result = db.execute(
+                "SELECT AVG(rating) as avg_rating, COUNT(*) as num_reviews FROM reviews WHERE place_id = ?",
+                (p["id"],)
+            ).fetchone()
+            avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
+            num_reviews = avg_rating_result['num_reviews']
+            places_with_ratings.append({
+                **dict(p),
+                "average_rating": avg_rating,
+                "num_reviews": num_reviews
+            })
+        return jsonify(places_with_ratings)
 
     @app.route('/api/category/<int:id>', methods=['GET'])
     def get_category(id):
@@ -68,13 +85,28 @@ def create_app():
         category = db.execute("SELECT * FROM categories WHERE id = ?", (id,)).fetchone()
         if not category:
             return jsonify({"error": "Category not found"}), 404
+
         places = db.execute("SELECT * FROM places WHERE category_id = ?", (id,)).fetchall()
+        places_with_ratings = []
+        for p in places:
+            avg_rating_result = db.execute(
+                "SELECT AVG(rating) as avg_rating, COUNT(*) as num_reviews FROM reviews WHERE place_id = ?",
+                (p["id"],)
+            ).fetchone()
+            avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
+            num_reviews = avg_rating_result['num_reviews']
+            places_with_ratings.append({
+                **dict(p),
+                "average_rating": avg_rating,
+                "num_reviews": num_reviews
+            })
+
         return jsonify({
             "id": category["id"],
             "name": category["name"],
             "image": category["image"],
             "description": category["description"],
-            "places": [dict(p) for p in places]
+            "places": places_with_ratings
         })
 
     # --- User Favorites ---
@@ -120,6 +152,7 @@ def create_app():
         place = db.execute("SELECT * FROM places WHERE id = ?", (id,)).fetchone()
         if not place:
             return jsonify({"error": "Place not found"}), 404
+        
         reviews = db.execute("""
             SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
             FROM reviews r
@@ -127,7 +160,17 @@ def create_app():
             WHERE r.place_id = ?
             ORDER BY r.created_at DESC
         """, (id,)).fetchall()
-        return jsonify({**dict(place), "reviews": [dict(r) for r in reviews]})
+
+        avg_rating_result = db.execute("SELECT AVG(rating) as avg_rating, COUNT(*) as num_reviews FROM reviews WHERE place_id = ?", (id,)).fetchone()
+        avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
+        num_reviews = avg_rating_result['num_reviews']
+
+        return jsonify({
+            **dict(place),
+            "reviews": [dict(r) for r in reviews],
+            "average_rating": avg_rating,
+            "num_reviews": num_reviews
+        })
 
     @app.route('/api/place/<int:id>/review', methods=['POST'])
     def add_review(id):
@@ -138,10 +181,15 @@ def create_app():
         data = request.get_json(force=True) or {}
         text = data.get('text')
         rating = data.get('rating')
-        if not text or rating is None:
-            return jsonify({'error': 'Incomplete review data'}), 400
+        if not text or rating is None or not (1 <= rating <= 5):
+            return jsonify({'error': 'Invalid review data'}), 400
 
         db = get_db()
+        # Prevent multiple reviews by same user for same place
+        exists = db.execute("SELECT 1 FROM reviews WHERE place_id = ? AND user_id = ?", (id, user_id)).fetchone()
+        if exists:
+            return jsonify({'error': 'You have already reviewed this place'}), 400
+
         cursor = db.execute(
             "INSERT INTO reviews (place_id, user_id, text, rating) VALUES (?, ?, ?, ?)",
             (id, user_id, text, rating)
@@ -149,13 +197,32 @@ def create_app():
         db.commit()
         review_id = cursor.lastrowid
 
+        # Recalculate average rating for the place
+        avg_rating_result = db.execute(
+            "SELECT AVG(rating) as avg_rating FROM reviews WHERE place_id = ?",
+            (id,)
+        ).fetchone()
+        avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
+
+        # Update the place's rating in the database
+        db.execute("UPDATE places SET rating = ? WHERE id = ?", (avg_rating, id))
+        db.commit()
+
+        # Get the inserted review with all needed fields
         review = db.execute("""
             SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.id = ?
         """, (review_id,)).fetchone()
-        return jsonify(dict(review)), 201
+
+        # Convert to dict and include place's updated average rating
+        review_dict = dict(review)
+        review_dict['place_avg_rating'] = avg_rating
+
+        return jsonify(review_dict), 201
+
+
 
     @app.route('/api/review/<int:review_id>', methods=['DELETE'])
     @require_admin
@@ -182,67 +249,67 @@ def create_app():
             'user': {'id': user['id'], 'username': user['username'], 'role': user['role']}
         })
 
-    # --- Community Posts ---
-    @app.route("/api/community/<category_name>", methods=["GET", "POST"])
-    def community_posts(category_name):
+    # --- Semantic Search ---
+    @app.route("/api/semantic-search", methods=["GET"])
+    def semantic_search():
+        query = request.args.get("q", "").strip()
+        if not query:
+            return jsonify([])
+
         db = get_db()
 
-        # Normalize category name
-        normalized_name = category_name.replace("-", " ").lower()
-        category = db.execute(
-            "SELECT id FROM categories WHERE LOWER(name) = ?",
-            (normalized_name,)
-        ).fetchone()
+        # Keyword search
+        keyword_matches = db.execute("""
+            SELECT id, name, location, rating, description, category_id
+            FROM places
+            WHERE LOWER(name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(location) LIKE ?
+        """, (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")).fetchall()
+        keyword_matches = [dict(p) for p in keyword_matches]
 
-        if not category:
-            return jsonify({"posts": []})
+        # Semantic search
+        places = db.execute("SELECT id, name, location, rating, description, category_id FROM places").fetchall()
+        places = [dict(p) for p in places]
 
-        category_id = category["id"]
+        corpus = [
+            f"{p['name']} in {p['location']} rated {p['rating']} stars. {p['description']}"
+            for p in places
+        ]
 
-        if request.method == "POST":
-            user_id = session.get('user_id')
-            if not user_id:
-                return jsonify({"error": "Unauthorized"}), 401
+        place_embeddings = embedding_model.encode(corpus, convert_to_tensor=True)
+        query_embedding = embedding_model.encode(query, convert_to_tensor=True)
 
-            data = request.get_json(force=True) or {}
-            title = data.get("title")
-            body = data.get("body")
+        scores = util.pytorch_cos_sim(query_embedding, place_embeddings)[0]
 
-            if not title or not body:
-                return jsonify({"error": "Missing fields"}), 400
+        THRESHOLD = 0.45
+        semantic_matches = [
+            {**p, "score": float(s)}
+            for p, s in zip(places, scores)
+            if float(s) >= THRESHOLD
+        ]
+        semantic_matches.sort(key=lambda x: x["score"], reverse=True)
 
-            cursor = db.execute(
-                "INSERT INTO posts (title, body, user_id, category_id) VALUES (?, ?, ?, ?)",
-                (title, body, user_id, category_id)
-            )
-            db.commit()
-            new_id = cursor.lastrowid
+        # Merge keyword + semantic
+        merged = {p["id"]: p for p in semantic_matches}
+        for p in keyword_matches:
+            merged[p["id"]] = {**p, "score": 1.0}
 
-            return jsonify({
-                "post": {
-                    "id": new_id,
-                    "title": title,
-                    "body": body,
-                    "user_id": user_id
-                }
-            }), 201
+        results = list(merged.values())
+        results.sort(key=lambda x: x["score"], reverse=True)
 
-        # GET → fetch posts
-        posts = db.execute(
-            """
-            SELECT p.id, p.title, p.body, p.created_at, u.username AS author
-            FROM posts p
-            JOIN users u ON p.user_id = u.id
-            WHERE p.category_id = ?
-            ORDER BY p.created_at DESC
-            """,
-            (category_id,)
-        ).fetchall()
+        return jsonify(results[:10])
 
-        return jsonify([dict(p) for p in posts])
+    @app.route("/api/search", methods=["GET"])
+    def search_places():
+        query = request.args.get("q", "").lower()
+        db = get_db()
+        results = db.execute("""
+            SELECT id, name, location, description
+            FROM places
+            WHERE LOWER(name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(location) LIKE ?
+        """, (f"%{query}%", f"%{query}%", f"%{query}%")).fetchall()
+        return jsonify([dict(r) for r in results])
 
     return app
-
 
 if __name__ == "__main__":
     app = create_app()

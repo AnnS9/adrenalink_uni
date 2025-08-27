@@ -37,8 +37,8 @@
 }
 .map-button-container-horizontal {
   display: flex;
-  gap: 12px; /* space between buttons */
-  justify-content: flex-end; /* align buttons to the right */
+  gap: 12px; 
+  justify-content: flex-end; 
 }
 
 .map-button-item {
@@ -109,17 +109,23 @@
 }
 
 /* Buttons */
-.add-to-track-btn {
-  padding: 0.5rem 1rem;
+.track-icon {
+  padding: 15px;
   font-weight: bold;
-  background: #e60000;
-  border: none;
+  background-color: #1e1e1e;
+  border: 2px solid red;
   border-radius: 4px;
   color: white;
   cursor: pointer;
   font-family: 'Teko', sans-serif;
   font-size: 20px;
   transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.track-label{
+  font-size: 12px;
+  margin-left: 3px; 
+  color: #faf3f3;
 }
 
 .add-to-track-btn:hover {
@@ -130,6 +136,15 @@
 .add-to-track-btn:active {
   transform: scale(0.98);
 }
+
+
+.back-button{
+  color: white;
+  font-family: 'Teko', sans-serif;
+  font-size: 20px;
+  margin-top: 2rem;
+}
+
 
 /* Map */
 .map-container {
