@@ -121,6 +121,9 @@
   font-size: 20px;
   transition: background-color 0.2s ease, transform 0.1s ease;
 }
+ .track-icon:active{
+color: rgb(184, 28, 28);
+ }
 
 .track-label{
   font-size: 12px;
@@ -135,6 +138,7 @@
 
 .add-to-track-btn:active {
   transform: scale(0.98);
+  background-color: #b80000;
 }
 
 
@@ -144,7 +148,15 @@
   font-size: 20px;
   margin-top: 2rem;
 }
+.review-author-link {
+  color: #ed0000;
+  font-weight: bold;
+  text-decoration: none;
+}
 
+.review-author-link:hover {
+  text-decoration: underline;
+}
 
 /* Map */
 .map-container {

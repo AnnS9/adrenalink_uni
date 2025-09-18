@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Link } from 'react-router-dom';  // <-- import Link
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -9,12 +10,14 @@ L.Icon.Default.mergeOptions({
   iconUrl: require('leaflet/dist/images/marker-icon.png'),
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
+
 const customIcon = L.icon({
-  iconUrl: '/images/icon-map.png', 
-  iconSize: [35, 35], 
-  iconAnchor: [17, 35], 
-  popupAnchor: [0, -35] 
+  iconUrl: '/images/icon-map.png',
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
+  popupAnchor: [0, -35],
 });
+
 export default function UkMap() {
   const [places, setPlaces] = useState([]);
 
@@ -32,16 +35,14 @@ export default function UkMap() {
         attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
       />
       {places.map((place) => (
-       <Marker
-    key={place.id}
-    position={[place.latitude, place.longitude]}
-    icon={customIcon} 
-  >
-    <Popup>
-      <strong>{place.name}</strong><br />
-      {place.description}
-    </Popup>
-  </Marker>
+        <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
+          <Popup>
+            <strong>{place.name}</strong><br />
+            {place.description}<br />
+            {/* Added link to place page */}
+            <Link to={`/place/${place.id}`}>View Place Details</Link>
+          </Popup>
+        </Marker>
       ))}
     </MapContainer>
   );

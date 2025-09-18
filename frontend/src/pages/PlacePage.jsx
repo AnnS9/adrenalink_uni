@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { FaStar, FaArrowsAlt, FaPlus } from 'react-icons/fa';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -19,22 +20,25 @@ const customMarkerIcon = new L.Icon({
 
 export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const { id } = useParams();
-  const [place, setPlace] = useState(null);
+  
+  const [place, setPlace] = useState({ reviews: [], latitude: null, longitude: null });
   const [showMap, setShowMap] = useState(false);
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
 
+  // Fetch place data
   useEffect(() => {
     fetch(`/api/place/${id}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
-        setPlace(data);
+        setPlace({ ...data, reviews: data.reviews || [] });
         if (data.is_favorited) setIsFavorited(true);
       })
       .catch(err => console.error('Failed to fetch place:', err));
   }, [id]);
 
+  // Add to track
   const handleAddToTrack = async () => {
     if (!isLoggedIn) {
       toast.info('You must be logged in to add to track.');
@@ -58,49 +62,41 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   };
 
+  // Submit review
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {
       toast.info('You must be logged in to leave a review.');
       return;
     }
-
     if (!reviewText.trim()) {
       toast.error('Please enter a review.');
       return;
     }
-
     if (!rating || rating < 1 || rating > 5) {
       toast.error('Please select a rating between 1 and 5.');
       return;
     }
-
-    const newReview = { text: reviewText.trim(), rating };
 
     try {
       const res = await fetch(`/api/place/${id}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(newReview),
+        body: JSON.stringify({ text: reviewText.trim(), rating }),
       });
-
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to submit review.');
       }
 
       const savedReview = await res.json();
-
       savedReview.rating = Number(savedReview.rating);
       savedReview.author = savedReview.author || currentUser?.username || 'Anonymous';
       savedReview.created_at = savedReview.created_at || new Date().toISOString();
 
       setPlace(prev => {
         const updatedReviews = [savedReview, ...(prev.reviews || [])];
-        const avgRating =
-          updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
-          updatedReviews.length;
-
+        const avgRating = updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / updatedReviews.length;
         return { ...prev, reviews: updatedReviews, rating: avgRating };
       });
 
@@ -113,19 +109,17 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   };
 
+  // Delete review
   const handleDeleteReview = (reviewId) => {
     if (!window.confirm('Delete this review?')) return;
-
     fetch(`/api/review/${reviewId}`, { method: 'DELETE', credentials: 'include' })
       .then(res => {
         if (res.ok) {
           setPlace(prev => {
             const updatedReviews = prev.reviews.filter(r => r.id !== reviewId);
-            const avgRating =
-              updatedReviews.length > 0
-                ? updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
-                  updatedReviews.length
-                : 0;
+            const avgRating = updatedReviews.length > 0
+              ? updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / updatedReviews.length
+              : 0;
             return { ...prev, reviews: updatedReviews, rating: avgRating };
           });
           toast.success('Review deleted.');
@@ -139,6 +133,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       });
   };
 
+  // Render stars
   const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar
@@ -172,7 +167,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                 <button className="track-icon" onClick={handleAddToTrack} title={isFavorited ? 'Already in Track' : 'Add to Tracks'} disabled={isFavorited}>
                   <FaPlus color={isFavorited ? 'yellow' : 'white'} />
                 </button>
-                <div className="track-label">{isFavorited ? 'In Track' : 'Add to Tracks'}</div>
+                <div className="track-label">{isFavorited ? 'In Track' : 'Add Track'}</div>
               </div>
             )}
           </div>
@@ -221,18 +216,25 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         ) : <p className="login-warning">You must be logged in to leave a review.</p>}
 
         <div className="reviews-list">
-          {place.reviews.map(review => (
-            <div key={review.id} className="review">
-              <strong>{review.author ?? 'Anonymous'}</strong>
-              <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
-              <p>{review.text}</p>
-              <small>{new Date(review.created_at).toLocaleDateString()}</small>
-              {userRole === 'admin' && <button className="delete-review" onClick={() => handleDeleteReview(review.id)}>Delete</button>}
-            </div>
-          ))}
-        </div>
+  {place.reviews?.map(review => (
+    <div key={review.id} className="review">
+      {review.user_id ? (
+        <Link to={`/users/${review.user_id}`} className="review-author-link">
+          {review.author ?? 'Anonymous'}
+        </Link>
+      ) : (
+        <strong>{review.author ?? 'Anonymous'}</strong>
+      )}
+      <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
+      <p>{review.text}</p>
+      <small>{new Date(review.created_at).toLocaleDateString()}</small>
+      {userRole === 'admin' && (
+        <button className="delete-review" onClick={() => handleDeleteReview(review.id)}>Delete</button>
+      )}
+    </div>
+  ))}
+</div>
       </section>
     </div>
   );
 }
-

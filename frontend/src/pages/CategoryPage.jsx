@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import '../styles/CategoryPage.css';
 import CategoryMap from './CategoryMap';
 
-export default function CategoryPage() {
+export default function CategoryPage({ isLoggedIn }) { 
   const { id } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
@@ -47,17 +47,19 @@ export default function CategoryPage() {
       </div>
 
       <div className="action-buttons">
-        <button
-          onClick={() => setShowMap(!showMap)}
-          className={`mapbutton ${showMap ? 'active' : ''}`}
-        >
-          {showMap ? 'Hide Map' : 'View Map'}
-        </button>
+      <button
+        onClick={() => setShowMap(!showMap)}
+        className={`mapbutton ${showMap ? 'active' : ''}`}
+      >
+        {showMap ? 'Hide Map' : 'View Map'}
+      </button>
 
-        <button onClick={() => navigate('/community')}>
+      {isLoggedIn && (
+        <button onClick={() => navigate(`/community`)}>
           AdrenaTribe Community
         </button>
-      </div>
+      )}
+    </div>
 
       {showMap && <CategoryMap places={category.places || []} />}
 

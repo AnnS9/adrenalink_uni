@@ -4,20 +4,8 @@
   min-height: 100vh;
   padding: 2.8rem;
   font-family: 'Segoe UI', sans-serif;
-  
 }
-.track-item {
-  display: flex;
-  flex-direction: column;
-  background-color: #1e1e1e;
-  padding: 1rem;
-  margin-bottom: 0.8rem;
-  border-radius: 10px;
-  transition: background-color 0.2s, transform 0.1s;
-  cursor: pointer;
-  text-decoration: none; /* remove underline */
-  color: inherit;        /* keep text color same as normal */
-}
+
 .tracks-title {
   font-size: 1.6rem;
   margin-bottom: 1rem;
@@ -34,6 +22,12 @@
   gap: 1rem;
 }
 
+.track-card-wrapper {
+  position: relative;
+  background-color: #1e1e1e;
+  border-radius: 12px;
+}
+
 .track-card {
   background-color: #1e1e1e;
   border-radius: 12px;
@@ -41,7 +35,7 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
-  text-decoration: none; 
+  text-decoration: none;
   color: inherit;
 }
 
@@ -59,15 +53,14 @@
 
 .track-info {
   padding: 0.75rem 1rem;
-  text-decoration: none; 
+  text-decoration: none;
   color: inherit;
-  
 }
 
 .track-name {
   font-size: 1.1rem;
   margin-bottom: 0.25rem;
-  text-decoration: none; 
+  text-decoration: none;
   color: inherit;
 }
 
@@ -84,6 +77,28 @@
   font-weight: bold;
   color: #ed0000; 
   font-size: 0.95rem;
+}
+
+.delete-track-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ed0000; /* same red as rating for consistency */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.delete-track-btn:hover {
+  background: #ff3333;
 }
 
 .loading,

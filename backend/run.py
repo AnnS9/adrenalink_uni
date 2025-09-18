@@ -1,13 +1,16 @@
 import os
 import sqlite3
-from flask import Flask, g, jsonify, request, current_app, session
+from flask import Flask, g, jsonify, request, current_app, session, Blueprint
 from flask_cors import CORS
+import uuid
+from auth import require_admin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 from sentence_transformers import SentenceTransformer, util
-import torch
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+community_bp = Blueprint("community", __name__, url_prefix="/api/community")
 
 # --- Database ---
 def get_db():
@@ -17,27 +20,25 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
-# --- Flask App Factory ---
+
+# --- Flask App  ---
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
 
-    # Config
     app.config.from_mapping(
         SECRET_KEY=os.getenv('FLASK_SECRET_KEY', 'your-default-secret-key'),
         DATABASE=os.path.join(app.instance_path, 'data.db'),
         PERMANENT_SESSION_LIFETIME=timedelta(days=7)
     )
 
-    # Ensure instance folder exists
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    # CORS
+    # --CORS--
     CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
-    # Close DB on teardown
     @app.teardown_appcontext
     def close_db(e=None):
         db = g.pop('db', None)
@@ -48,10 +49,11 @@ def create_app():
     with app.app_context():
         from db import init_app
         init_app(app)
-        from auth import auth_bp, require_admin
+        from auth import auth_bp
         from admin import admin_bp
         app.register_blueprint(auth_bp)
         app.register_blueprint(admin_bp)
+        app.register_blueprint(community_bp)  # ✅ register community blueprint
 
     # --- Category & Place Routes ---
     @app.route('/api/categories', methods=['GET'])
@@ -137,13 +139,36 @@ def create_app():
             return jsonify({'error': 'Missing placeId'}), 400
 
         db = get_db()
-        exists = db.execute("SELECT 1 FROM user_favorites WHERE user_id = ? AND place_id = ?", (user_id, place_id)).fetchone()
+        exists = db.execute(
+            "SELECT 1 FROM user_favorites WHERE user_id = ? AND place_id = ?",
+            (user_id, place_id)
+        ).fetchone()
         if exists:
             return jsonify({'message': 'Already in favorites'}), 200
 
         db.execute("INSERT INTO user_favorites (user_id, place_id) VALUES (?, ?)", (user_id, place_id))
         db.commit()
         return jsonify({'message': 'Added to favorites'}), 201
+
+    @app.route('/api/user/favorites', methods=['DELETE'])
+    def remove_favorite_place():
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        data = request.get_json(force=True) or {}
+        place_id = data.get('placeId')
+        if not place_id:
+            return jsonify({'error': 'Missing placeId'}), 400
+
+        db = get_db()
+        db.execute(
+            "DELETE FROM user_favorites WHERE user_id = ? AND place_id = ?",
+            (user_id, place_id)
+        )
+        db.commit()
+
+        return jsonify({'message': 'Removed from favorites'}), 200
 
     # --- Place & Review Routes ---
     @app.route('/api/place/<int:id>', methods=['GET'])
@@ -152,24 +177,38 @@ def create_app():
         place = db.execute("SELECT * FROM places WHERE id = ?", (id,)).fetchone()
         if not place:
             return jsonify({"error": "Place not found"}), 404
-        
+
         reviews = db.execute("""
-            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
+            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author, u.id AS user_id
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.place_id = ?
             ORDER BY r.created_at DESC
         """, (id,)).fetchall()
 
-        avg_rating_result = db.execute("SELECT AVG(rating) as avg_rating, COUNT(*) as num_reviews FROM reviews WHERE place_id = ?", (id,)).fetchone()
+        avg_rating_result = db.execute(
+            "SELECT AVG(rating) as avg_rating, COUNT(*) as num_reviews FROM reviews WHERE place_id = ?",
+            (id,)
+        ).fetchone()
         avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
         num_reviews = avg_rating_result['num_reviews']
+
+        user_id = session.get("user_id")
+        is_favorited = False
+        if user_id:
+            fav = db.execute(
+                "SELECT 1 FROM user_favorites WHERE user_id = ? AND place_id = ?",
+                (user_id, id)
+            ).fetchone()
+            if fav:
+                is_favorited = True
 
         return jsonify({
             **dict(place),
             "reviews": [dict(r) for r in reviews],
             "average_rating": avg_rating,
-            "num_reviews": num_reviews
+            "num_reviews": num_reviews,
+            "is_favorited": is_favorited
         })
 
     @app.route('/api/place/<int:id>/review', methods=['POST'])
@@ -185,8 +224,10 @@ def create_app():
             return jsonify({'error': 'Invalid review data'}), 400
 
         db = get_db()
-        # Prevent multiple reviews by same user for same place
-        exists = db.execute("SELECT 1 FROM reviews WHERE place_id = ? AND user_id = ?", (id, user_id)).fetchone()
+        exists = db.execute(
+            "SELECT 1 FROM reviews WHERE place_id = ? AND user_id = ?",
+            (id, user_id)
+        ).fetchone()
         if exists:
             return jsonify({'error': 'You have already reviewed this place'}), 400
 
@@ -197,32 +238,26 @@ def create_app():
         db.commit()
         review_id = cursor.lastrowid
 
-        # Recalculate average rating for the place
         avg_rating_result = db.execute(
             "SELECT AVG(rating) as avg_rating FROM reviews WHERE place_id = ?",
             (id,)
         ).fetchone()
         avg_rating = round(avg_rating_result['avg_rating'], 2) if avg_rating_result['avg_rating'] else 0
 
-        # Update the place's rating in the database
         db.execute("UPDATE places SET rating = ? WHERE id = ?", (avg_rating, id))
         db.commit()
 
-        # Get the inserted review with all needed fields
         review = db.execute("""
-            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author
+            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author, u.id AS user_id
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.id = ?
         """, (review_id,)).fetchone()
 
-        # Convert to dict and include place's updated average rating
         review_dict = dict(review)
         review_dict['place_avg_rating'] = avg_rating
 
         return jsonify(review_dict), 201
-
-
 
     @app.route('/api/review/<int:review_id>', methods=['DELETE'])
     @require_admin
@@ -232,6 +267,20 @@ def create_app():
         db.commit()
         return jsonify({"message": "Review deleted"}), 200
 
+    @app.route('/api/users/<int:user_id>', methods=['GET'])
+    def get_user_public(user_id):
+        db = get_db()
+        user = db.execute("SELECT id, username, full_name, profile_picture, location, activities FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_dict = dict(user)
+        if user_dict.get('activities'):
+            user_dict['activities'] = [a.strip() for a in user_dict['activities'].split(',')]
+        else:
+            user_dict['activities'] = []
+        return jsonify(user_dict)
+
     # --- Auth Check ---
     @app.route('/api/check-auth', methods=['GET'])
     def check_auth():
@@ -240,7 +289,9 @@ def create_app():
             return jsonify({'logged_in': False})
 
         db = get_db()
-        user = db.execute("SELECT id, username, role FROM users WHERE id = ?", (user_id,)).fetchone()
+        user = db.execute(
+            "SELECT id, username, role FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
         if not user:
             return jsonify({'logged_in': False})
 
@@ -258,7 +309,6 @@ def create_app():
 
         db = get_db()
 
-        # Keyword search
         keyword_matches = db.execute("""
             SELECT id, name, location, rating, description, category_id
             FROM places
@@ -266,8 +316,9 @@ def create_app():
         """, (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")).fetchall()
         keyword_matches = [dict(p) for p in keyword_matches]
 
-        # Semantic search
-        places = db.execute("SELECT id, name, location, rating, description, category_id FROM places").fetchall()
+        places = db.execute(
+            "SELECT id, name, location, rating, description, category_id FROM places"
+        ).fetchall()
         places = [dict(p) for p in places]
 
         corpus = [
@@ -288,7 +339,6 @@ def create_app():
         ]
         semantic_matches.sort(key=lambda x: x["score"], reverse=True)
 
-        # Merge keyword + semantic
         merged = {p["id"]: p for p in semantic_matches}
         for p in keyword_matches:
             merged[p["id"]] = {**p, "score": 1.0}
@@ -310,6 +360,88 @@ def create_app():
         return jsonify([dict(r) for r in results])
 
     return app
+
+
+# --- Forum Blueprint Routes ---
+@community_bp.route("", methods=["GET"])
+def get_posts():
+    db = get_db()
+    posts = db.execute("SELECT * FROM forum_posts ORDER BY created_at DESC").fetchall()
+    return jsonify({"posts": [dict(p) for p in posts]})
+
+
+@community_bp.route("", methods=["POST"])
+def create_post():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(force=True) or {}
+    title, body, category = data.get("title", "").strip(), data.get("body", "").strip(), data.get("category", "").strip()
+
+    if not title or not body or not category:
+        return jsonify({"error": "All fields are required"}), 400
+
+    db = get_db()
+    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    post_id = str(uuid.uuid4())
+    db.execute(
+        "INSERT INTO forum_posts (id, category, title, body, username) VALUES (?, ?, ?, ?, ?)",
+        (post_id, category, title, body, user["username"])
+    )
+    db.commit()
+
+    new_post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+    return jsonify({"post": dict(new_post)}), 201
+
+
+@community_bp.route("/<string:post_id>", methods=["GET"])
+def get_post(post_id):
+    db = get_db()
+    post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+
+    comments = db.execute("SELECT * FROM forum_comments WHERE post_id = ? ORDER BY created_at DESC", (post_id,)).fetchall()
+    return jsonify({**dict(post), "comments": [dict(c) for c in comments]})
+
+
+@community_bp.route("/<string:post_id>/comments", methods=["POST"])
+def add_comment(post_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(force=True) or {}
+    body = data.get("body", "").strip()
+    if not body:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+
+    db = get_db()
+    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    db.execute(
+        "INSERT INTO forum_comments (post_id, username, body) VALUES (?, ?, ?)",
+        (post_id, user["username"], body)
+    )
+    db.commit()
+
+    return jsonify({"message": "Comment added"}), 201
+
+
+@community_bp.route("/<string:post_id>", methods=["DELETE"])
+@require_admin
+def delete_post(post_id):
+    db = get_db()
+    db.execute("DELETE FROM forum_posts WHERE id = ?", (post_id,))
+    db.commit()
+    return jsonify({"message": "Post deleted"}), 200
+
 
 if __name__ == "__main__":
     app = create_app()

@@ -2,20 +2,26 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Profile.css'; 
 
-const ActivityIcon = ({ name }) => (
-  <div>
-    <div className="activity-icon-placeholder"></div>
+const ActivityIcon = ({ name, image }) => (
+  <div className="activity-icon">
+    <img src={image} alt={name} className="activity-image" />
     <span className="activity-name">{name}</span>
   </div>
 );
 
 const AVAILABLE_ACTIVITIES = [
-  'Kitesurfing',
-  'Mountain Biking',
-  'Rock Climbing',
-  'Snowboarding',
-  'Zip Line',
-  'Surfing',
+  { name: 'Kitesurfing', image: '/images/kitesurfing.png' },
+  { name: 'Mountain Biking', image: '/images/biking.png' },
+  { name: 'Rock Climbing', image: '/images/climbing.png' },
+  { name: 'Snowboarding', image: '/images/snowboarding.png' },
+  { name: 'Zip Line', image: '/images/ziplining.png' },
+  { name: 'Surfing', image: '/images/surfing.png' },
+];
+
+const AVAILABLE_AVATARS = [
+  '/images/avatar1.png',
+  '/images/avatar2.png',
+  '/images/avatar3.png',
 ];
 
 export default function EditProfile() {
@@ -130,17 +136,17 @@ export default function EditProfile() {
         <div className="form-group">
           <label className="form-label">Your Activities</label>
           <div className="activity-grid">
-            {AVAILABLE_ACTIVITIES.map(activity => (
-              <button
-                key={activity}
-                type="button"
-                onClick={() => handleActivityToggle(activity)}
-                className={`activity-item ${form.activities.includes(activity) ? 'selected' : ''}`}
-              >
-                <ActivityIcon name={activity} />
-              </button>
-            ))}
-          </div>
+          {AVAILABLE_ACTIVITIES.map(activity => (
+            <button
+              key={activity.name}
+              type="button"
+              onClick={() => handleActivityToggle(activity.name)}
+              className={`activity-item ${form.activities.includes(activity.name) ? 'selected' : ''}`}
+            >
+              <ActivityIcon name={activity.name} image={activity.image} />
+            </button>
+          ))}
+        </div>
         </div>
 
         {/* Profile Details */}
@@ -169,15 +175,19 @@ export default function EditProfile() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="profile_picture" className="form-label">Profile Picture URL</label>
-          <input
-            id="profile_picture"
-            name="profile_picture"
-            value={form.profile_picture}
-            onChange={handleChange}
-            placeholder="https://your-image-url.com/..."
-            className="form-input"
-          />
+          <label className="form-label">Choose a Profile Picture</label>
+          <div className="avatar-grid">
+            {AVAILABLE_AVATARS.map((avatar, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`avatar-item ${form.profile_picture === avatar ? 'selected' : ''}`}
+                onClick={() => setForm({ ...form, profile_picture: avatar })}
+              >
+                <img src={avatar} alt={`Avatar ${idx + 1}`} className="avatar-image" />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Buttons */}

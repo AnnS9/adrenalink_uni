@@ -6,32 +6,43 @@ export default function SearchResults() {
   const [results, setResults] = useState([]);
   const location = useLocation();
 
-  // Extract query param from URL
   const query = new URLSearchParams(location.search).get("q");
 
   useEffect(() => {
-  if (!query) return;
+    if (!query) return;
 
-  fetch(`http://localhost:5000/api/semantic-search?q=${encodeURIComponent(query)}`)
-    .then((res) => res.json())
-    .then((data) => setResults(data))
-    .catch((err) => console.error(err));
-}, [query]);
+    fetch(`http://localhost:5000/api/semantic-search?q=${encodeURIComponent(query)}`)
+      .then((res) => res.json())
+      .then((data) => setResults(data))
+      .catch((err) => console.error(err));
+  }, [query]);
 
   return (
-  <div className="container">
-    <h1>Search Results for: {query}</h1>
-    {results.length === 0 ? (
-      <p>No matching places found.</p>
-    ) : (
-      results.map((place) => (
-        <div key={place.id} className="result-card">
-          <h2>{place.name}</h2>
-          <p>{place.location} — ⭐ {place.rating}</p>
-          <p>{place.description}</p>
+    <div className="container">
+      <h1>Search Results for: {query}</h1>
+
+      {results.length === 0 ? (
+        <p>No matching places found.</p>
+      ) : (
+        <div className="results-list">
+          {results.map((place) => (
+            <Link to={`/place/${place.id}`} key={place.id} className="result-card-link">
+              <div className="result-card dark-card">
+                <img 
+                  src={place.image || "/images/default.jpg"} 
+                  alt={place.name} 
+                  className="result-card-image"
+                />
+                <div className="result-card-content">
+                  <h2>{place.name}</h2>
+                  <p>{place.location} — ⭐ {place.rating || "0.0"}</p>
+                  <p>{place.description}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-      ))
-    )}
+      )}
 
       <Link to="/" className="back-button">
         ⬅ Back to Home
@@ -39,3 +50,4 @@ export default function SearchResults() {
     </div>
   );
 }
+

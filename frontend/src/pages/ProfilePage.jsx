@@ -1,17 +1,32 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Profile.css'; 
+import ConfirmModal from '../components/ConfirmModal';
+import '../styles/Profile.css';
 
-const ActivityIcon = ({ name }) => (
-  <div className="activity-display-item">
-    <div className="activity-display-icon"></div>
-    <span className="activity-display-name">{name}</span>
-  </div>
-);
+const AVAILABLE_ACTIVITIES = [
+  { name: 'Kitesurfing', image: '/images/kitesurfing.png' },
+  { name: 'Mountain Biking', image: '/images/biking.png' },
+  { name: 'Rock Climbing', image: '/images/climbing.png' },
+  { name: 'Snowboarding', image: '/images/snowboarding.png' },
+  { name: 'Zip Line', image: '/images/ziplining.png' },
+  { name: 'Surfing', image: '/images/surfing.png' },
+];
 
+const ActivityIcon = ({ name }) => {
+  const activity = AVAILABLE_ACTIVITIES.find(a => a.name === name);
+  return (
+    <div className="activity-display-item">
+      <div className="activity-display-icon">
+        {activity && <img src={activity.image} alt={activity.name} />}
+      </div>
+      <span className="activity-display-name">{name}</span>
+    </div>
+  );
+};
 
 export default function ProfilePage() {
   const [adrenaid, setProfile] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,18 +42,15 @@ export default function ProfilePage() {
   }, [navigate]);
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete your account?')) {
-      fetch('/api/adrenaid', {
-        method: 'DELETE',
-        credentials: 'include'
-      }).then(() => navigate('/'));
-    }
+    fetch('/api/adrenaid', { method: 'DELETE', credentials: 'include' })
+      .then(() => navigate('/'));
   };
 
   if (!adrenaid) return <div className="loading">Loading profile...</div>;
 
-  
-  const userActivities = adrenaid.activities ? adrenaid.activities.split(',').map(a => a.trim()).filter(Boolean) : [];
+  const userActivities = adrenaid.activities
+    ? adrenaid.activities.split(',').map(a => a.trim()).filter(Boolean)
+    : [];
 
   return (
     <div className="profile-page">
@@ -48,7 +60,7 @@ export default function ProfilePage() {
           alt="Avatar"
           className="avatar"
         />
-        <h2>Hello <br></br> {adrenaid.full_name || adrenaid.username}</h2>
+        <h2>Hello <br /> {adrenaid.full_name || adrenaid.username}</h2>
         {adrenaid.location && (
           <div className="location-info">
             <svg className="location-pin-icon" viewBox="0 0 20 20" fill="currentColor">
@@ -58,7 +70,7 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
-     
+
       {userActivities.length > 0 && (
         <div className="profile-activities">
           <div className="profile-activities-grid">
@@ -68,12 +80,21 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-       
+
       <div className="profile-actions">
         <button onClick={() => navigate('/adrenaid/edit')}>Edit Profile</button>
-        <button className="danger" onClick={handleDelete}>Delete Account</button>
+        <button onClick={() => navigate('/tracks')}>Tracks</button>
+        <button className="danger" onClick={() => setShowConfirm(true)}>Delete Account</button>
       </div>
-    </div>  
 
+      {showConfirm && (
+        <ConfirmModal
+          title="Delete Account"
+          message="Are you sure you want to permanently delete your account? This action cannot be undone."
+          onConfirm={handleDelete}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </div>
   );
 }

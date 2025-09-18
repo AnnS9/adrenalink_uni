@@ -1,29 +1,30 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/global.css";
+import CommunityBanner from "../components/Banner";
 
-export default function Home() {
+export default function Homepage({ isLoggedIn }) {
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [promoIndex, setPromoIndex] = useState(0);
   const navigate = useNavigate();
 
   const promoTexts = [
-    "Find your next adventure ",
-    "Discover adrenaline spots ",
-    "Track your favorite places ",
+    "Find your next adventure",
+    "Discover adrenaline spots",
+    "Track your favorite places",
   ];
 
+  // Fetch categories from backend
   useEffect(() => {
-    // Fetch categories from backend
     fetch("http://localhost:5000/api/categories")
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch((err) => console.error(err));
   }, []);
 
+  // Rotate promo text every 3 seconds
   useEffect(() => {
-    // Rotate promo text every 3 seconds
     const interval = setInterval(() => {
       setPromoIndex((prev) => (prev + 1) % promoTexts.length);
     }, 3000);
@@ -37,37 +38,39 @@ export default function Home() {
   };
 
   return (
-    <div className="container">
-      <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
-      <h1>Pick Your Adrenaline</h1>
+    <div className="homepage">
+      {/* Community banner for non-logged-in users */}
+      <CommunityBanner isLoggedIn={isLoggedIn} />
 
-      {/* --- Rotating Promo Text --- */}
-      <p className="promo-text">{promoTexts[promoIndex]}</p>
+      <div className="container">
+        <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
+        <h1>Pick Your Adrenaline</h1>
 
-      {/* --- Search Bar --- */}
-      <form onSubmit={handleSearch} className="search-bar">
-        <input
-          type="text"
-          placeholder="Search categories..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <button type="submit">Search</button>
-      </form>
+        <p className="promo-text">{promoTexts[promoIndex]}</p>
 
-      {/* --- Category Tiles --- */}
-      <div className="grid">
-        {categories.map(({ id, name, image }) => (
-          <Link to={`/category/${id}`} key={id}>
-            <div className="tile">
-              <img src={image} alt={name} />
-              <div className="overlay" />
-              <div className="textOverlay">
-                <span className="textInner">{name.toUpperCase()}</span>
+        <form onSubmit={handleSearch} className="search-bar">
+          <input
+            type="text"
+            placeholder="Search categories..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button type="submit">Search</button>
+        </form>
+
+        <div className="grid">
+          {categories.map(({ id, name, image }) => (
+            <Link to={`/category/${id}`} key={id}>
+              <div className="tile">
+                <img src={image} alt={name} />
+                <div className="overlay" />
+                <div className="textOverlay">
+                  <span className="textInner">{name.toUpperCase()}</span>
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

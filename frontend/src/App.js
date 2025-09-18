@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { ToastContainer } from 'react-toastify';
@@ -17,14 +17,18 @@ import EditProfile from './pages/EditProfile';
 import Tracks from './pages/Tracks';
 import Community from "./pages/Community";
 import SearchResults from "./pages/SearchResults";
+import PublicProfile from "./pages/PublicProfile";
+import PublicUserTracks from "./pages/PublicUserTracks";
+import PostPage from "./pages/PostPage";
+
+
 
 // --- useAuth Hook ---
-const useAuth = () => {
+function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const navigate = useNavigate();
-  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
     let isMounted = true;
@@ -33,12 +37,11 @@ const useAuth = () => {
       try {
         const response = await fetch('/api/check-auth', { credentials: 'include' });
         const data = await response.json();
-
         if (isMounted) {
           setIsLoggedIn(data.logged_in);
-          setUserRole(data.user_role);
+          setUserRole(data.user?.role || null);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           setIsLoggedIn(false);
           setUserRole(null);
@@ -49,10 +52,7 @@ const useAuth = () => {
     };
 
     checkAuthStatus();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -68,8 +68,8 @@ const useAuth = () => {
     setUserRole(user.role);
   };
 
-  return { isLoggedIn, userRole, isAdmin, isAuthLoading, handleLogout, manualLogin };
-};
+  return { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin };
+}
 
 // --- ProtectedRoute Component ---
 function ProtectedRoute({ isAdmin, isAuthLoading, children }) {
@@ -80,69 +80,36 @@ function ProtectedRoute({ isAdmin, isAuthLoading, children }) {
 
 // --- AppContent Component ---
 function AppContent() {
-  const { isLoggedIn, userRole, isAdmin, isAuthLoading, handleLogout, manualLogin } = useAuth();
+  const { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openAuthModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const handleLoginSuccess = (userData) => { manualLogin(userData); closeModal(); };
 
-  const handleLoginSuccess = (userData) => {
-    manualLogin(userData);
-    closeModal();
-  };
+  // Wait until auth check is complete
+  if (isAuthLoading) return <div>Loading...</div>;
 
   return (
     <>
-      {/* ToastContainer allows toast messages to appear */}
-      <ToastContainer 
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick draggable theme="colored" />
 
-      <AppLayout isLoggedIn={isLoggedIn} isAdmin={isAdmin}>
+      <AppLayout isLoggedIn={isLoggedIn} isAdmin={userRole === 'admin'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/category/:id" element={<CategoryPage />} />
           <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
           <Route path="/map" element={<UkMap />} />
-
-          <Route
-            path="/adrenaid"
-            element={
-              isAuthLoading ? <div>Loading...</div> : isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/adrenaid/edit"
-            element={
-              isAuthLoading ? <div>Loading...</div> : isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />
-            }
-          />
+          <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />
+          <Route path="/adrenaid" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />} />
+          <Route path="/adrenaid/edit" element={isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />} />
           <Route path="/search" element={<SearchResults />} />
-          <Route
-            path="/adminpanel"
-            element={
-              <ProtectedRoute isAdmin={isAdmin} isAuthLoading={isAuthLoading}>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/tracks"
-            element={
-              isAuthLoading ? <div>Loading...</div> : isLoggedIn ? <Tracks /> : <Navigate to="/" replace />
-            }
-          />
+          <Route path="/adminpanel" element={<ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}><AdminPanel /></ProtectedRoute>} />
           <Route path="/community" element={<Community isLoggedIn={isLoggedIn} />} />
+          <Route path="/users/:userId" element={<PublicProfile />} />
+          <Route path="/users/:userId/tracks" element={<PublicUserTracks />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/community/:id" element={<PostPage />} />
         </Routes>
       </AppLayout>
 
@@ -154,17 +121,13 @@ function AppContent() {
         onLogoutClick={handleLogout}
       />
 
-      <AuthModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onLoginSuccess={handleLoginSuccess}
-      />
+      <AuthModal isOpen={isModalOpen} onClose={closeModal} onLoginSuccess={handleLoginSuccess} />
     </>
   );
 }
 
 // --- Main App Component ---
-function App() {
+export default function App() {
   return (
     <Router>
       <AppContent />
@@ -172,4 +135,4 @@ function App() {
   );
 }
 
-export default App;
+
