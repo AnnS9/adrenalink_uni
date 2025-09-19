@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "../styles/Community.css";
 
 export default function PostPage() {
   const { id } = useParams();
+  const navigate = useNavigate(); // <-- Add navigate
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +46,12 @@ export default function PostPage() {
 
   return (
     <div className="post-page">
+      <br></br>
+      <br></br>
+      <button className="back-button" onClick={() => navigate(-1)}>
+        ← Back
+      </button>
+
       <div className="post-card">
         <h1 className="post-title">{post.title}</h1>
         <span className="post-tag">{post.category}</span>
@@ -53,16 +60,15 @@ export default function PostPage() {
       </div>
 
       <div className="comments-section">
-      
         {post.comments.length === 0 ? (
           <p>No comments yet.</p>
         ) : (
           <ul className="comments-list">
-  {post.comments.slice().reverse().map((c, i) => (
-    <li key={i} className="comment-card">
-      <p className="comment-body">{c.body}</p>
-      <p className="comment-author"><strong>{c.username}</strong> - {new Date(c.created_at).toLocaleString()}</p>
-    </li>
+            {post.comments.slice().reverse().map((c, i) => (
+              <li key={i} className="comment-card">
+                <p className="comment-body">{c.body}</p>
+                <p className="comment-author"><strong>{c.username}</strong> - {new Date(c.created_at).toLocaleString()}</p>
+              </li>
             ))}
           </ul>
         )}

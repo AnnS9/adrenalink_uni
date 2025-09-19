@@ -1,17 +1,20 @@
 import { useState } from "react";
 import AuthModal from "./AuthModal";
 
-export default function CommunityBanner({ isLoggedIn }) {
+export default function CommunityBanner({ onAuthClick }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleClick = () => {
+    if (onAuthClick) onAuthClick();
+    else setShowAuthModal(true);
+  };
 
   return (
     <>
-      {!isLoggedIn && (
-        <div className="community-banner">
-          Create account to access the Community Hub
-          <button onClick={() => setShowAuthModal(true)}>Sign In</button>
-        </div>
-      )}
+      <div className="community-banner">
+        Create an account to access the Community Hub
+        <button onClick={handleClick}>SIGN IN</button>
+      </div>
 
       {showAuthModal && (
         <AuthModal

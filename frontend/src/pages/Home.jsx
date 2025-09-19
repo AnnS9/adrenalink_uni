@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/global.css";
-import CommunityBanner from "../components/Banner";
 
-export default function Homepage({ isLoggedIn }) {
+
+export default function Home({ isLoggedIn }) {
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [promoIndex, setPromoIndex] = useState(0);
@@ -15,23 +15,21 @@ export default function Homepage({ isLoggedIn }) {
     "Track your favorite places",
   ];
 
-  // Fetch categories from backend
   useEffect(() => {
     fetch("http://localhost:5000/api/categories")
-      .then((res) => res.json())
-      .then((data) => setCategories(data))
-      .catch((err) => console.error(err));
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(err => console.error(err));
   }, []);
 
-  // Rotate promo text every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setPromoIndex((prev) => (prev + 1) % promoTexts.length);
+      setPromoIndex(prev => (prev + 1) % promoTexts.length);
     }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = (e) => {
+  const handleSearch = e => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
@@ -39,8 +37,7 @@ export default function Homepage({ isLoggedIn }) {
 
   return (
     <div className="homepage">
-      {/* Community banner for non-logged-in users */}
-      <CommunityBanner isLoggedIn={isLoggedIn} />
+      
 
       <div className="container">
         <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
@@ -53,7 +50,7 @@ export default function Homepage({ isLoggedIn }) {
             type="text"
             placeholder="Search categories..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
           <button type="submit">Search</button>
         </form>

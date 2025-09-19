@@ -12,18 +12,17 @@ export default function Community({ isLoggedIn }) {
 
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
-  // Check user role
   useEffect(() => {
   fetch(`${BACKEND_URL}/api/check-auth`, { credentials: "include" })
     .then(res => res.json())
     .then(data => {
       console.log("check-auth response:", data);
-      setIsAdmin(data.user_role === "admin"); // ✅ fix
+      setIsAdmin(data.user_role === "admin"); 
     })
     .catch(() => setIsAdmin(false));
 }, [BACKEND_URL]);
 
-  // Fetch all posts
+ 
   useEffect(() => {
     setLoading(true);
     fetch(`${BACKEND_URL}/api/community`, { credentials: "include" })
@@ -89,9 +88,9 @@ export default function Community({ isLoggedIn }) {
 
   return (
     <div className="community-page">
-      <h1>Community Forum</h1>
+      <h1>Community Forum</h1><br></br>
 
-      <button onClick={() => setShowForm(true)}>Add New Post</button>
+      <button onClick={() => setShowForm(true)}>Add New Post</button><br></br>
 
       {showForm && (
         <div className="modal">
@@ -132,27 +131,30 @@ export default function Community({ isLoggedIn }) {
         <p>No posts yet.</p>
       ) : (
         <div className="posts-list">
-          {posts.map(post => (
-            <div key={post.id} className="post-card">
-              <Link to={`/community/${post.id}`}>
-                <h2>{post.title}</h2>
-              </Link>
-              <p>{post.body.substring(0, 100)}...</p>
-              <p><em>By {post.username}</em></p>
-              <span className="post-tag">#{post.category}</span><br></br>
+  {posts.map(post => (
+    <Link 
+      to={`/community/${post.id}`} 
+      key={post.id} 
+      className="post-card-link"
+    >
+      <br></br><div className="post-card">
+        <h2>{post.title}</h2>
+        <p>{post.body.substring(0, 100)}...</p>
+        <p><em>By {post.username}</em></p>
+        <span className="post-tag">#{post.category}</span>
 
-              {/* Delete button for admins */}
-              {isAdmin && (
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDelete(post.id)}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+        {isAdmin && (
+          <button
+            className="delete-btn"
+            onClick={(e) => { e.preventDefault(); handleDelete(post.id); }}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </Link>
+  ))}
+</div>
       )}
     </div>
   );

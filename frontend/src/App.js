@@ -1,6 +1,5 @@
+import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
-import 'leaflet/dist/leaflet.css';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -11,17 +10,16 @@ import PlacePage from './pages/PlacePage';
 import AdminPanel from './pages/AdminPanel';
 import BottomMenu from './components/BottomMenu';
 import AuthModal from './components/AuthModal';
+import CommunityBanner from './components/Banner';
 import UkMap from './components/UkMap';
 import ProfilePage from './pages/ProfilePage';
 import EditProfile from './pages/EditProfile';
 import Tracks from './pages/Tracks';
-import Community from "./pages/Community";
-import SearchResults from "./pages/SearchResults";
-import PublicProfile from "./pages/PublicProfile";
-import PublicUserTracks from "./pages/PublicUserTracks";
-import PostPage from "./pages/PostPage";
-
-
+import Community from './pages/Community';
+import SearchResults from './pages/SearchResults';
+import PublicProfile from './pages/PublicProfile';
+import PublicUserTracks from './pages/PublicUserTracks';
+import PostPage from './pages/PostPage';
 
 // --- useAuth Hook ---
 function useAuth() {
@@ -87,29 +85,41 @@ function AppContent() {
   const closeModal = () => setIsModalOpen(false);
   const handleLoginSuccess = (userData) => { manualLogin(userData); closeModal(); };
 
-  // Wait until auth check is complete
   if (isAuthLoading) return <div>Loading...</div>;
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} closeOnClick draggable theme="colored" />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        closeOnClick
+        draggable
+        theme="colored"
+      />
 
       <AppLayout isLoggedIn={isLoggedIn} isAdmin={userRole === 'admin'}>
+        {!isLoggedIn && <CommunityBanner onAuthClick={openAuthModal} />}
+
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/category/:id" element={<CategoryPage />} />
+          <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
+          <Route path="/category/:id" element={<CategoryPage isLoggedIn={isLoggedIn} />} />
+
           <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
           <Route path="/map" element={<UkMap />} />
           <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />
           <Route path="/adrenaid" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />} />
           <Route path="/adrenaid/edit" element={isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />} />
           <Route path="/search" element={<SearchResults />} />
-          <Route path="/adminpanel" element={<ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}><AdminPanel /></ProtectedRoute>} />
+          <Route path="/adminpanel" element={
+            <ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
           <Route path="/community" element={<Community isLoggedIn={isLoggedIn} />} />
+          <Route path="/community/:id" element={<PostPage />} />
           <Route path="/users/:userId" element={<PublicProfile />} />
           <Route path="/users/:userId/tracks" element={<PublicUserTracks />} />
-          <Route path="/community" element={<Community />} />
-          <Route path="/community/:id" element={<PostPage />} />
         </Routes>
       </AppLayout>
 
@@ -121,7 +131,11 @@ function AppContent() {
         onLogoutClick={handleLogout}
       />
 
-      <AuthModal isOpen={isModalOpen} onClose={closeModal} onLoginSuccess={handleLoginSuccess} />
+      <AuthModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </>
   );
 }
@@ -134,5 +148,3 @@ export default function App() {
     </Router>
   );
 }
-
-

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import '../styles/CategoryPage.css';
 import CategoryMap from './CategoryMap';
 
-export default function CategoryPage({ isLoggedIn }) { 
+export default function CategoryPage({ isLoggedIn }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
@@ -17,9 +17,7 @@ export default function CategoryPage({ isLoggedIn }) {
 
     fetch(`http://localhost:5000/api/category/${id}`)
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch category ${id}: ${res.statusText}`);
-        }
+        if (!res.ok) throw new Error(`Failed to fetch category ${id}: ${res.statusText}`);
         return res.json();
       })
       .then((data) => setCategory(data))
@@ -27,7 +25,6 @@ export default function CategoryPage({ isLoggedIn }) {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ⭐ star renderer
   const renderStars = (value = 0) =>
     [...Array(5)].map((_, i) => (
       <span key={i} style={{ color: i < value ? '#ed0000' : '#ccc' }}>★</span>
@@ -47,19 +44,22 @@ export default function CategoryPage({ isLoggedIn }) {
       </div>
 
       <div className="action-buttons">
-      <button
-        onClick={() => setShowMap(!showMap)}
-        className={`mapbutton ${showMap ? 'active' : ''}`}
-      >
-        {showMap ? 'Hide Map' : 'View Map'}
-      </button>
-
-      {isLoggedIn && (
-        <button onClick={() => navigate(`/community`)}>
-          AdrenaTribe Community
+        <button
+          onClick={() => setShowMap(!showMap)}
+          className={`mapbutton ${showMap ? 'active' : ''}`}
+        >
+          {showMap ? 'Hide Map' : 'View Map'}
         </button>
-      )}
-    </div>
+
+        {isLoggedIn && (
+          <button
+            onClick={() => navigate('/community')}
+            className="community-button"
+          >
+            Community Posts
+          </button>
+        )}
+      </div>
 
       {showMap && <CategoryMap places={category.places || []} />}
 
@@ -67,7 +67,7 @@ export default function CategoryPage({ isLoggedIn }) {
         {category.places?.map((place, index) => (
           <div
             className="place-card"
-            key={place.id || index}  // fallback if id missing
+            key={place.id || index}
             onClick={() => navigate(`/place/${place.id || index}`)}
             style={{ cursor: 'pointer' }}
           >

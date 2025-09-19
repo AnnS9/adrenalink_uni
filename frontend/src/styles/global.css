@@ -52,22 +52,34 @@ body, html, #root {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* always 2 per row */
+  grid-template-columns: repeat(2, 1fr); /* 2 per row on mobile */
   gap: 16px;
-  padding-left: 8px; 
-  padding-right: 8px; 
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .tile {
   position: relative;
   width: 100%;
-  padding-bottom: 100%; /* square shape */
+  padding-bottom: 100%; /* square on mobile */
   border-radius: 4px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+@media (min-width: 1024px) {
+   .grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+  }
+
+  .tile {
+    padding-bottom: 280%; 
+  }
+
+  
+}
+
 
 .tile:hover {
   box-shadow: 0 6px 12px rgba(0,0,0,0.3);
@@ -195,6 +207,11 @@ h1 {
   font-family: 'Teko', sans-serif;
   color: #ddd;
 }
+
+.search-bar button:hover {
+  background-color: #383737;
+  border: 2px solid #383737;
+}
 .results-list {
   display: flex;
   flex-direction: column;
@@ -259,31 +276,52 @@ h1 {
 }
 
 .community-banner {
-  width: 100%;
-  background-color: #ed00005d; 
+  max-width: 100%;
+  margin: 10px auto;
+  background-color: rgba(237, 0, 0, 0.6);
   color: #fff;
   text-align: center;
-  padding: 1px 20px;
-  font-size: 1.2rem;
-  position: sticky;       
-  top: 60px;              
+  padding: 8px 12px;
+  font-size: 0.8rem;
+ 
+  font-weight: 700;
+  
+  position: sticky;
+  top: 60px;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3); 
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 .community-banner button {
-  margin-left: 12px;
   padding: 6px 12px;
   font-weight: 700;
-  
-  border-color: 2px;
+  font-family: 'Teko', sans-serif;
+  border: none;
   border-radius: 4px;
-  background-color: #03030300;
-  color: #f1efef;
+  background-color: #fff;
+  color: #ed0000;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.3s, transform 0.2s;
 }
 
 .community-banner button:hover {
   background-color: #ffe5e5;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .community-banner {
+    width: 90%;
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+
+  .community-banner button {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
 }
