@@ -90,3 +90,167 @@
   text-align: center;
   font-size: 1.2rem;
 }
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal container */
+.admin-modal-content {
+  background-color: #1e1e1e;
+  color: #fff;
+  border-radius: 8px;
+  padding: 20px 30px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* Close button */
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  color: #e60000;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Form inputs */
+.add-data-form input,
+.add-data-form select,
+.add-data-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  background-color: #333;
+  border: 1px solid #e60000;
+  border-radius: 4px;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+/* Submit button */
+.submit-btn {
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #45a049;
+}
+
+/* Error text */
+.error-text {
+  color: #f44336;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+/* Highlight the row corresponding to the modal being open */
+.admin-content tr.editing-row {
+  background-color: #444 !important;       /* darker row */
+  border-left: 4px solid #e60000;         /* red accent */
+  transition: background 0.3s, border-left 0.3s;
+}
+
+/* Dim all other rows when modal is open */
+.admin-content.editing-mode tr:not(.editing-row) {
+  opacity: 0.5;
+  pointer-events: none;                   /* prevent accidental clicks */
+  transition: opacity 0.3s;
+}
+
+/* Modal styling (if not already defined) */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.admin-modal-content {
+  background: #1e1e1e;
+  color: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.admin-modal-content input,
+.admin-modal-content select,
+.admin-modal-content textarea {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  background: #333;
+  border: 1px solid #e60000;
+  border-radius: 4px;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.submit-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.submit-btn:hover {
+  background-color: #45a049;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #e60000;
+  cursor: pointer;
+}
+
+.error-text {
+  color: #f44336;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+.add-new-btn{
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}

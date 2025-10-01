@@ -5,33 +5,27 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
     const [formData, setFormData] = useState({});
     const [error, setError] = useState(null);
 
-    // This effect pre-fills the form with the item's data when the modal opens
     useEffect(() => {
-        if (itemToEdit) {
-            setFormData(itemToEdit);
-        }
+        if (itemToEdit) setFormData(itemToEdit);
     }, [itemToEdit]);
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
         try {
-            const response = await fetch(`/api/admin/${activeTab}/${itemToEdit.id}`, {
+            const response = await fetch(`/api/admin/${activeTab}/${itemToEdit.id || itemToEdit._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
+                credentials: 'include'
             });
             const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to update the item.');
-            }
+            if (!response.ok) throw new Error(result.error || 'Failed to update item');
             onSuccess();
         } catch (err) {
             setError(err.message);
@@ -40,13 +34,11 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
 
     if (!isOpen) return null;
 
-    // The renderFormFields function would be here, similar to your AddDataModal,
-    // but using `value={formData.fieldName}` for each input to show the current data.
-    // For example:
+    // --- Render functions for each tab ---
     const renderUserFields = () => (
         <>
-            <input name="username" value={formData.username || ''} placeholder="Username" onChange={handleChange} required />
-            <input name="email" type="email" value={formData.email || ''} placeholder="Email" onChange={handleChange} required />
+            <input name="username" placeholder="Username" value={formData.username || ''} onChange={handleChange} required />
+            <input name="email" type="email" placeholder="Email" value={formData.email || ''} onChange={handleChange} required />
             <select name="role" value={formData.role || 'client'} onChange={handleChange}>
                 <option value="client">Client</option>
                 <option value="admin">Admin</option>
@@ -54,6 +46,25 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
         </>
     );
 
+    const renderPlaceFields = () => (
+        <>
+            <input name="name" placeholder="Place Name" value={formData.name || ''} onChange={handleChange} required />
+            <input name="description" placeholder="Description" value={formData.description || ''} onChange={handleChange} />
+            <input name="location" placeholder="Location" value={formData.location || ''} onChange={handleChange} />
+            <input name="latitude" type="number" step="any" placeholder="Latitude" value={formData.latitude || ''} onChange={handleChange} />
+            <input name="longitude" type="number" step="any" placeholder="Longitude" value={formData.longitude || ''} onChange={handleChange} />
+            <input name="image" placeholder="Image URL" value={formData.image || ''} onChange={handleChange} />
+            <input name="rating" type="number" step="0.1" placeholder="Rating" value={formData.rating || ''} onChange={handleChange} />
+            <input name="category_id" type="number" placeholder="Category ID" value={formData.category_id || ''} onChange={handleChange} />
+        </>
+    );
+
+    const renderCategoryFields = () => (
+        <>
+            <input name="name" placeholder="Category Name" value={formData.name || ''} onChange={handleChange} required />
+            <input name="image" placeholder="Image URL" value={formData.image || ''} onChange={handleChange} />
+        </>
+    );
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -61,10 +72,9 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
                 <button className="close-modal-btn" onClick={onClose}>&times;</button>
                 <h3>Edit {activeTab.slice(0, -1)}</h3>
                 <form className="add-data-form" onSubmit={handleSubmit}>
-                    {/* Based on activeTab, render the correct set of fields */}
                     {activeTab === 'users' && renderUserFields()}
-                    {/* Add similar render functions for places and categories */}
-                    
+                    {activeTab === 'places' && renderPlaceFields()}
+                    {activeTab === 'categories' && renderCategoryFields()}
                     {error && <p className="error-text">{error}</p>}
                     <button type="submit" className="submit-btn">Save Changes</button>
                 </form>

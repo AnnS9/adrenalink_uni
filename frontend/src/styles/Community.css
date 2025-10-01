@@ -1,4 +1,4 @@
-/* Container for community and post pages */
+
 .community-cat-page,
 .post-page {
   max-width: 900px;
@@ -10,7 +10,7 @@
   z-index: 1;
 }
 
-/* Page titles */
+
 .community-cat-page h1,
 .post-page h1 {
   font-family: 'Teko', sans-serif;
@@ -24,7 +24,7 @@
   text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
-/* Community buttons */
+
 .community-buttons {
   display: flex;
   gap: 4rem;
@@ -63,14 +63,14 @@
   box-shadow: 0 6px 12px rgba(0,0,0,0.5);
 }
 
-/* Posts list */
+
 .posts-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-/* Clickable post cards */
+
 .post-card-link {
   display: block;
   text-decoration: none;
@@ -83,7 +83,6 @@
   transition: all 0.3s ease;
 }
 
-/* Post card styling */
 .post-card {
   padding: 6px;
   border: 1px solid #444;
@@ -93,6 +92,11 @@
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
+   background-color: #4d4b4b79;
+  border: 1px solid #8b0202;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
 }
 
 .post-card h2 {
@@ -114,7 +118,6 @@
   color: #d1c1ff;
 }
 
-/* Delete button for admins */
 .delete-btn {
   background-color: #e74c3c;
   color: white;
@@ -130,20 +133,10 @@
   background-color: #c0392b;
 }
 
-/* Post page styling */
 .post-page {
   max-width: 800px;
   margin: 80px auto;
   padding: 0 20px;
-}
-
-.post-card {
-  background-color: #4d4b4b79;
-  border: 1px solid #8b0202;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
 }
 
 .post-title {
@@ -174,7 +167,7 @@
   color: #ccc;
 }
 
-/* Comments section */
+
 .comments-section {
   margin-top: 40px;
 }
@@ -232,7 +225,7 @@
   margin-top: 5px;
 }
 
-/* Back button */
+
 .back-button {
   display: inline-block;
   margin-bottom: 20px;
@@ -247,7 +240,7 @@
   background-color: #3e3e3f;
 }
 
-/* Modal styling */
+
 .modal {
   position: fixed;
   inset: 0;
@@ -281,7 +274,6 @@
   color: white;
 }
 
-/* Remove blue links in cards */
 .post-card a {
   text-decoration: none;
   color: inherit;

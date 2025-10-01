@@ -19,33 +19,39 @@ const customIcon = L.icon({
 });
 
 export default function UkMap() {
-  const { id } = useParams(); // category id from URL
+  const { id } = useParams(); 
   const [places, setPlaces] = useState([]);
 
   useEffect(() => {
     fetch(`/api/category/${id}`)
       .then((res) => res.json())
-      .then((data) => setPlaces(data.places || [])) // only places in this category
+      .then((data) => setPlaces(data.places || []))
       .catch((err) => console.error('Error fetching places:', err));
   }, [id]);
 
   return (
-    <MapContainer center={[54.5, -3]} zoom={6} style={{ height: '100%', width: '100%' }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-      />
-      {places.map((place) => (
-        <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
-          <Popup>
-            <strong>{place.name}</strong><br />
-            {place.description}<br />
-            <Link to={`/place/${place.id}`} className="popup-link">
-              View Place Details
-            </Link>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="map-container inline">  
+      <MapContainer
+        center={[54.5, -3]}
+        zoom={6}
+        style={{ height: '100%', width: '100%' }} 
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        />
+        {places.map((place) => (
+          <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
+            <Popup>
+              <strong>{place.name}</strong><br />
+              {place.description}<br />
+              <Link to={`/place/${place.id}`} className="popup-link">
+                View Place Details
+              </Link>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }

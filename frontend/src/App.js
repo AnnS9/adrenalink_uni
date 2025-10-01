@@ -31,6 +31,17 @@ function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
+    // First, check localStorage
+    const storedRole = localStorage.getItem('userRole');
+    if (storedRole) {
+      if (isMounted) {
+        setIsLoggedIn(true);
+        setUserRole(storedRole);
+        setIsAuthLoading(false);
+      }
+      return; // skip server check for instant render
+    }
+
     const checkAuthStatus = async () => {
       try {
         const response = await fetch('/api/check-auth', { credentials: 'include' });
@@ -38,6 +49,7 @@ function useAuth() {
         if (isMounted) {
           setIsLoggedIn(data.logged_in);
           setUserRole(data.user?.role || null);
+          if (data.user?.role) localStorage.setItem('userRole', data.user.role);
         }
       } catch {
         if (isMounted) {
@@ -57,6 +69,7 @@ function useAuth() {
     fetch('/api/logout', { method: 'POST', credentials: 'include' }).then(() => {
       setIsLoggedIn(false);
       setUserRole(null);
+      localStorage.removeItem('userRole');
       navigate('/');
     });
   }, [navigate]);
@@ -64,6 +77,7 @@ function useAuth() {
   const manualLogin = (user) => {
     setIsLoggedIn(true);
     setUserRole(user.role);
+    localStorage.setItem('userRole', user.role);
   };
 
   return { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin };
@@ -85,7 +99,7 @@ function AppContent() {
   const closeModal = () => setIsModalOpen(false);
   const handleLoginSuccess = (userData) => { manualLogin(userData); closeModal(); };
 
-  if (isAuthLoading) return <div>Loading...</div>;
+  if (isAuthLoading) return <div>Loading...</div>; // show while checking auth
 
   return (
     <>
@@ -104,7 +118,6 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
           <Route path="/category/:id" element={<CategoryPage isLoggedIn={isLoggedIn} />} />
-
           <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
           <Route path="/map" element={<UkMap />} />
           <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />

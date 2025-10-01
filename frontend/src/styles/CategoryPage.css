@@ -9,6 +9,8 @@
   background-size:cover;
   background-position: center;
   height: 40vh; 
+  
+  margin: 0 auto;   
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,7 +21,7 @@
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5); 
+  background: rgba(0, 0, 0, 0.185); 
   z-index: 1;
 }
 
@@ -33,6 +35,8 @@
 }
 .action-buttons {
   display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
   flex-direction: column;
   gap: 10px;
   padding: 20px;
@@ -53,6 +57,11 @@
 
 .places-list {
   padding: 20px;
+  max-width: 1200px; 
+  margin: 0 auto;    
+  display: flex;
+  flex-direction: column; 
+  gap: 20px;
 }
 
 .place-card {
@@ -77,59 +86,22 @@ button {
 
 .map-container.inline {
   height: 50vh;
-  width: 100%;
-  margin-top: 20px;
+  max-width: 1200px;      /* maximum width for desktop */
+  width: 90%;             /* responsive width on smaller screens */
+  margin: 20px auto 0;    /* center horizontally */
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
-/* --- Modal & Fullscreen Styles --- */
-
-/* Hides the modal/fullscreen view by default */
-.map-hidden {
-  display: none;
+/* Mobile: make map full width */
+@media (max-width: 768px) {
+  .map-container.inline {
+    width: 100%;
+    margin: 20px 0 0;
+  }
 }
-
-/* Fullscreen style for mobile devices */
-.map-fullscreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1000;
-  background: #121212; /* Dark background for mobile */
-}
-
-/* Modal style for desktop devices */
-.map-desktop-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.75); /* Dark semi-transparent overlay */
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-
-
-.map-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: 1400px;
-  max-height: 85vh;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-}
-
 
 /* --- Button Styles --- */
 
