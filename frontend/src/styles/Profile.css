@@ -14,8 +14,6 @@
 .avatar {
   width: 120px;
   height: 120px;
-  border-radius: 50%;
-  border: 3px solid #e60000;
   margin-bottom: 1rem;
 }
 
@@ -67,7 +65,7 @@
   width: 80px;
   aspect-ratio: 1 / 1;
   border-radius: 0.5rem;
-  background-color: #2d3748;
+  background-color: #9ea0a5;
   color: white;
   font-family: 'Teko', sans-serif;
   text-align: center;
@@ -173,8 +171,8 @@
 .profile-picture {
   width: 7rem; 
   height: 7rem;
-  border-radius: 50%;
-  border: 2px solid #4a5568; 
+  border-radius: 60%;
+  
   object-fit: cover;
 }
 
@@ -223,7 +221,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  width: 120px; 
+  width: 120px;
   aspect-ratio: 1 / 1;
   border-radius: 0.75rem;
   background-color: #2d3748;
@@ -297,16 +295,29 @@
 }
 
 .avatar-item {
-  border: 2px solid transparent;
+  
   border-radius: 50%;
   overflow: hidden;
   padding: 2px;
   cursor: pointer;
-  transition: border-color 0.2s;
+  
 }
 
 .avatar-item.selected {
-  border-color: #e60000; 
+  position: relative;
+  
+  box-shadow: 0 0 12px 4px rgba(237, 0, 0, 0.5); 
+  
+  transition: all 0.3s ease;
+}
+
+.avatar-item.selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(237, 0, 0, 0.25); 
+  pointer-events: none;
 }
 
 .avatar-image {
@@ -314,7 +325,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 50%;
+  
 }
 
 

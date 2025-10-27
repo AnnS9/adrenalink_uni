@@ -22,6 +22,9 @@ const AVAILABLE_AVATARS = [
   '/images/avatar1.png',
   '/images/avatar2.png',
   '/images/avatar3.png',
+  '/images/avatar4.png',
+  '/images/avatar5.png',
+  '/images/default_avatar.png',
 ];
 
 export default function EditProfile() {
@@ -66,7 +69,7 @@ export default function EditProfile() {
 
     const payload = { ...form };
 
-    // Don't send password fields if new password is empty
+    
     if (!form.new_password) {
       delete payload.current_password;
       delete payload.new_password;
