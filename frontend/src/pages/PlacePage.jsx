@@ -133,7 +133,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       });
   };
 
-  // Render stars
+  
   const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar

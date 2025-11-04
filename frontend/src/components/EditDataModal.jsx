@@ -34,7 +34,7 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
 
     if (!isOpen) return null;
 
-    // --- Render functions for each tab ---
+  
     const renderUserFields = () => (
         <>
             <input name="username" placeholder="Username" value={formData.username || ''} onChange={handleChange} required />

@@ -8,9 +8,7 @@ import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import PlacePage from './pages/PlacePage';
 import AdminPanel from './pages/AdminPanel';
-import BottomMenu from './components/BottomMenu';
 import AuthModal from './components/AuthModal';
-import CommunityBanner from './components/Banner';
 import UkMap from './components/UkMap';
 import ProfilePage from './pages/ProfilePage';
 import EditProfile from './pages/EditProfile';
@@ -21,7 +19,6 @@ import PublicProfile from './pages/PublicProfile';
 import PublicUserTracks from './pages/PublicUserTracks';
 import PostPage from './pages/PostPage';
 
-// --- useAuth Hook ---
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -31,7 +28,6 @@ function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
-    // First, check localStorage
     const storedRole = localStorage.getItem('userRole');
     if (storedRole) {
       if (isMounted) {
@@ -39,7 +35,7 @@ function useAuth() {
         setUserRole(storedRole);
         setIsAuthLoading(false);
       }
-      return; // skip server check for instant render
+      return;
     }
 
     const checkAuthStatus = async () => {
@@ -83,14 +79,12 @@ function useAuth() {
   return { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin };
 }
 
-// --- ProtectedRoute Component ---
 function ProtectedRoute({ isAdmin, isAuthLoading, children }) {
   if (isAuthLoading) return <div>Authenticating...</div>;
   if (!isAdmin) return <Navigate to="/" replace />;
   return children;
 }
 
-// --- AppContent Component ---
 function AppContent() {
   const { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,7 +93,7 @@ function AppContent() {
   const closeModal = () => setIsModalOpen(false);
   const handleLoginSuccess = (userData) => { manualLogin(userData); closeModal(); };
 
-  if (isAuthLoading) return <div>Loading...</div>; // show while checking auth
+  if (isAuthLoading) return <div>Loading...</div>;
 
   return (
     <>
@@ -112,10 +106,19 @@ function AppContent() {
         theme="colored"
       />
 
-      <AppLayout isLoggedIn={isLoggedIn} isAdmin={userRole === 'admin'}>
-        {!isLoggedIn && <CommunityBanner onAuthClick={openAuthModal} />}
-
-        <Routes>
+      {/* Layout route wraps all pages and contains the single BottomMenu */}
+      <Routes>
+        <Route
+          element={
+            <AppLayout
+              isLoggedIn={isLoggedIn}
+              isAuthLoading={isAuthLoading}
+              userRole={userRole}
+              onAuthClick={openAuthModal}
+              onLogoutClick={handleLogout}
+            />
+          }
+        >
           <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
           <Route path="/category/:id" element={<CategoryPage isLoggedIn={isLoggedIn} />} />
           <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
@@ -124,25 +127,20 @@ function AppContent() {
           <Route path="/adrenaid" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />} />
           <Route path="/adrenaid/edit" element={isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />} />
           <Route path="/search" element={<SearchResults />} />
-          <Route path="/adminpanel" element={
-            <ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}>
-              <AdminPanel />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/adminpanel"
+            element={
+              <ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/community" element={<Community isLoggedIn={isLoggedIn} />} />
           <Route path="/community/:id" element={<PostPage />} />
           <Route path="/users/:userId" element={<PublicProfile />} />
           <Route path="/users/:userId/tracks" element={<PublicUserTracks />} />
-        </Routes>
-      </AppLayout>
-
-      <BottomMenu
-        isAuthLoading={isAuthLoading}
-        isLoggedIn={isLoggedIn}
-        userRole={userRole}
-        onAuthClick={openAuthModal}
-        onLogoutClick={handleLogout}
-      />
+        </Route>
+      </Routes>
 
       <AuthModal
         isOpen={isModalOpen}
@@ -153,7 +151,6 @@ function AppContent() {
   );
 }
 
-// --- Main App Component ---
 export default function App() {
   return (
     <Router>

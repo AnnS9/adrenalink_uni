@@ -83,7 +83,7 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #ed0000; /* same red as rating for consistency */
+  background: #ed0000; 
   color: white;
   border: none;
   border-radius: 6px;

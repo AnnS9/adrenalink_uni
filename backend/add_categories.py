@@ -3,7 +3,7 @@ import sqlite3
 connection = sqlite3.connect("./instance/data.db")
 cur = connection.cursor()
 
-# Insert categories
+
 categories = [
     ("Mountain Biking", "/images/mountain_biking.jpg", "Explore rugged trails."),
     ("Surfing", "/images/surfing.jpg", "Ride the waves."),
@@ -18,4 +18,4 @@ cur.executemany("INSERT INTO categories (name, image, description) VALUES (?, ?,
 connection.commit()
 connection.close()
 
-print("✅ Categories added.")
+print(" Categories added.")

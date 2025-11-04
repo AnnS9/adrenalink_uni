@@ -29,32 +29,28 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
   const [formData, setFormData] = useState(defaultData[activeTab]);
   const [error, setError] = useState(null);
 
-  /* ------------------------------------------------------------------
-   * Reset the form every time the modal opens or the tab changes
-   * ------------------------------------------------------------------ */
+
+
+ 
   useEffect(() => {
     if (isOpen) setFormData(defaultData[activeTab]);
   }, [isOpen, activeTab]);
 
-  /* ------------------------------------------------------------------
-   * Generic change handler
-   * ------------------------------------------------------------------ */
+  /* Generic change handler*/
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /* ------------------------------------------------------------------
-   * Submit handler
-   * ------------------------------------------------------------------ */
+  /*  Submit handler */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // choose /api/admin/users | places | categories
+
     const endpoint = `/api/admin/${activeTab}`;
 
-    // cast number‑like fields for places
+
     let payload = { ...formData };
     if (activeTab === 'places') {
       payload = {
@@ -76,8 +72,8 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to add item');
 
-      onSuccess();           // refresh table in parent
-      setFormData(defaultData[activeTab]); // clear form
+      onSuccess();         
+      setFormData(defaultData[activeTab]); 
     } catch (err) {
       setError(err.message);
     }
@@ -85,9 +81,7 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
 
   if (!isOpen) return null;
 
-  /* ------------------------------------------------------------------
-   * Render tab‑specific fields
-   * ------------------------------------------------------------------ */
+
   const renderFields = () => {
     switch (activeTab) {
       case 'users':
@@ -131,7 +125,7 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
     }
   };
 
-  /* ------------------------------------------------------------------ */
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>

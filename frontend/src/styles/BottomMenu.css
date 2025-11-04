@@ -1,143 +1,163 @@
-/* ======================================= */
-/* 1. Base Menu Styles          */
-/* ======================================= */
+:root {
+  --brand: #ed0000;
+  --text: #fff;
+  --nav-bg: rgba(17, 17, 17, 0.75); /* visible after scroll */
+  --nav-border: rgba(255, 255, 255, 0.1);
+}
 
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -40px;
+  background: #000;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  z-index: 10000;
+}
+.skip-link:focus { top: 8px; }
+
+/* Base nav (mobile bottom bar) */
 .bottom-menu {
   display: flex;
   align-items: center;
+  justify-content: space-around;
   position: fixed;
   z-index: 1000;
-  color: white;
-  font-weight: 600;
-  background-color: #222;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
-  /* Mobile-first styles */
-  bottom: 0;
   left: 0;
   right: 0;
-  height: px;
-  justify-content: space-around;
+  bottom: 0;
+  height: 58px;
+  background-color: rgba(17, 17, 17, 0.94);
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+  color: var(--text);
+  font-weight: 600;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* ======================================= */
-/* 2. Mobile Item & Icon Styles     */
-/* ======================================= */
-
-/* Common class for all links and buttons */
-
+/* Nav items */
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  gap: 4px; /* A small, explicit gap between icon and text */
+  gap: 4px;
   height: 100%;
-  /* Use padding to ensure a large tap target, even on the edges */
-  padding: 6px 4px; 
-  font-size: 12px; /* A good, standard font size */
-  font-weight: 500; /* Medium weight is often more readable than 600 */
+  min-width: 56px;
+  padding: 6px 6px;
+  font-size: 12px;
   color: inherit;
   text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
+  transition: color 0.2s ease;
   position: relative;
-  transition: color 0.3s ease;
-  /* This ensures the clickable area is large enough */
-  min-width: 48px; 
+}
+.nav-item .label { line-height: 1; }
+.nav-item svg { width: 22px; height: 22px; }
+
+.nav-item:focus-visible,
+.desktop-logo-link:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
-/* Hide desktop logo on mobile */
-.desktop-logo-link {
-  display: none;
-}
+/* Hide logo on mobile */
+.desktop-logo-link { display: none; }
 
-/* ======================================= */
-/* 3. Desktop Styles (768px+)      */
-/* ======================================= */
-
+/* Desktop styles */
 @media (min-width: 768px) {
   .bottom-menu {
     top: 0;
     bottom: auto;
-    height: 60px; /* Adjusted for better padding */
-    padding: 0 40px;
-    background-color: #111;
-    justify-content: flex-end; /* Aligns items to the right */
-    gap: 15px; /* Adds space between menu items */
+    height: 64px;
+    padding: 0 28px;
+    justify-content: flex-end;
+    gap: 8px;
+    border-bottom: 1px solid transparent;
+    background-color: rgba(0, 0, 255, 0);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition:
+      background-color 200ms ease,
+      box-shadow 200ms ease,
+      backdrop-filter 200ms ease,
+      border-color 200ms ease;
   }
 
-  /* Push logo to the far left */
-  .bottom-menu .desktop-logo-link {
+ 
+  .bottom-menu.scrolled {
+    background-color: var(--nav-bg);
+    backdrop-filter: saturate(160%) blur(10px);
+    -webkit-backdrop-filter: saturate(160%) blur(10px);
+    border-bottom-color: var(--nav-border);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .desktop-logo-link {
     display: flex;
     margin-right: auto;
+    align-items: center;
+    height: 100%;
   }
 
   .desktop-logo {
     display: block;
-    height: 20px;
+    height: 22px;
   }
-.desktop-logo-link:hover,
-.desktop-logo-link.is-link:hover,
-.desktop-logo-link.is-button:hover,
-.desktop-logo-link::after {
-  background-color: transparent !important;
-  transform: scaleX(0) !important;
-  opacity: 1 !important;
-}
+
+  /* Horizontal items */
   .nav-item {
-    flex-direction: row; /* Puts text beside icon (if shown) */
+    flex-direction: row;
+    gap: 8px;
     font-size: 14px;
-    font-weight: bold;
-    flex: 0 1 auto; /* Stops items from growing */
-    padding: 10px 16px;
+    font-weight: 700;
+    padding: 10px 14px;
     height: auto;
-    border-radius: 4px; /* Add radius for hover effect */
-    transition: background-color 0.3s ease;
+    min-width: auto;
+    border-radius: 8px;
   }
 
-  /* Hide icons on desktop */
-  .nav-item svg {
-    display: none;
-  }
+  .nav-item svg { display: none; }
 
-  /* --- Desktop Hover & Active Effects --- */
-
-  /* The red underline for NavLink items */
+  /* Underline animation */
   .nav-item.is-link::after {
     content: '';
     position: absolute;
-    left: 10%;
-    right: 10%;
-    bottom: 1px; 
+    left: 12px;
+    right: 12px;
+    bottom: 6px;
     height: 3px;
     background-color: transparent;
     border-radius: 2px;
-    transition: transform 0.3s ease;
     transform: scaleX(0);
     transform-origin: center;
+    transition: transform 0.2s ease, background-color 0.2s ease;
   }
 
   .nav-item.is-link:hover::after,
   .nav-item.is-link.active::after {
-    background-color: #ed0000;
+    background-color: var(--brand);
     transform: scaleX(1);
   }
 
-  /* Background color hover for buttons */
   .nav-item.is-button:hover {
-    background-color: #333;
+    background-color: rgba(255,255,255,0.07);
   }
-  
-  /* The logo link should not have hover effects */
-  .desktop-logo-link:hover,
-  .desktop-logo-link::after {
-    background-color: transparent !important;
-    transform: scaleX(0) !important;
+
+  /* Prevent overlap with top nav */
+  .app-layout > main {
+    padding-top: 64px;
   }
 }
-.nav-item svg {
-  width: 24px;  /* Adjust size as needed */
-  height: 24px; /* Adjust size as needed */
+
+/* Mobile styles */
+@media (max-width: 767.98px) {
+  .nav-item { color: #e9eaeb; }
+  .nav-item.active { color: #fff; }
+  .nav-item svg { display: block; }
 }

@@ -51,7 +51,7 @@ def signup():
 
 
 @auth_bp.route('/login', methods=['POST'])
-def login_user():  # Renamed to avoid conflict
+def login_user(): 
     data = request.json
     email = data.get('email')
     password = data.get('password')

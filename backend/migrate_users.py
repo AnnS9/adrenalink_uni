@@ -1,13 +1,13 @@
 import sqlite3
 
-# Path to your database file
+# Path to database file
 db_path = 'instance/data.db'
 
 # Connect to SQLite database
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-# Alter table statements
+# table statements
 alter_statements = [
     "ALTER TABLE users ADD COLUMN full_name TEXT;",
     "ALTER TABLE users ADD COLUMN location TEXT;",
@@ -22,7 +22,7 @@ for stmt in alter_statements:
     except sqlite3.OperationalError as e:
         print(f"Skipped: {stmt} — Reason: {e}")
 
-# Add creation of user_favorites table
+
 try:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_favorites (
@@ -40,4 +40,4 @@ except sqlite3.OperationalError as e:
 
 conn.commit()
 conn.close()
-print("✅ Migration complete.")
+print(" Migration complete.")

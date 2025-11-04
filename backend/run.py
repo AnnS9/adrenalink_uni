@@ -37,7 +37,7 @@ def create_app():
         pass
 
     # --CORS--
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000"}}, supports_credentials=True)
 
     @app.teardown_appcontext
     def close_db(e=None):
@@ -53,7 +53,7 @@ def create_app():
         from admin import admin_bp
         app.register_blueprint(auth_bp)
         app.register_blueprint(admin_bp)
-        app.register_blueprint(community_bp)  # ✅ register community blueprint
+        app.register_blueprint(community_bp) 
 
     # --- Category & Place Routes ---
     @app.route('/api/categories', methods=['GET'])

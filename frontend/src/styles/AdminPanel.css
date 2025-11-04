@@ -78,11 +78,11 @@
 }
 
 .admin-content .edit-btn {
-  background-color: #2196F3; /* Blue */
+  background-color: #2196F3; 
 }
 
 .admin-content .delete-btn {
-  background-color: #f44336; /* Red */
+  background-color: #f44336; 
 }
 
 .error-message {
@@ -163,21 +163,21 @@
   margin-bottom: 10px;
   font-size: 0.9rem;
 }
-/* Highlight the row corresponding to the modal being open */
+
 .admin-content tr.editing-row {
-  background-color: #444 !important;       /* darker row */
-  border-left: 4px solid #e60000;         /* red accent */
+  background-color: #444 !important;       
+  border-left: 4px solid #e60000;         
   transition: background 0.3s, border-left 0.3s;
 }
 
-/* Dim all other rows when modal is open */
+
 .admin-content.editing-mode tr:not(.editing-row) {
   opacity: 0.5;
-  pointer-events: none;                   /* prevent accidental clicks */
+  pointer-events: none;                   
   transition: opacity 0.3s;
 }
 
-/* Modal styling (if not already defined) */
+/* Modal styling  */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;

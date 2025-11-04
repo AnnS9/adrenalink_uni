@@ -1,4 +1,4 @@
-// src/pages/Home.jsx
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/global.css";
@@ -26,8 +26,9 @@ export default function Home({ isLoggedIn }) {
     const interval = setInterval(() => {
       setPromoIndex(prev => (prev + 1) % PROMO_TEXTS.length);
     }, 3000);
+
     return () => clearInterval(interval);
-  }, [PROMO_TEXTS.length]); // stable now
+  }, []); 
 
   const handleSearch = e => {
     e.preventDefault();
@@ -44,14 +45,18 @@ export default function Home({ isLoggedIn }) {
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>
 
         <form onSubmit={handleSearch} className="search-bar">
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-          <button type="submit">Search</button>
-        </form>
+        <label htmlFor="searchInput" className="visually-hidden">
+          Search categories
+        </label>
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="Search categories..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+        <button type="submit">Search</button>
+      </form>
 
         <div className="grid">
           {categories.map(({ id, name, image }) => (
@@ -70,3 +75,4 @@ export default function Home({ isLoggedIn }) {
     </div>
   );
 }
+

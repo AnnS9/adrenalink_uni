@@ -119,10 +119,11 @@ export default function Community({ isLoggedIn }) {
                 onChange={handleInputChange}
               />
               <div className="form-buttons">
-                <button type="submit">Submit</button>
+                <button type="submit" className="sub-btn">Submit</button>
                 <button type="button" onClick={() => setShowForm(false)}>Cancel</button>
               </div>
             </form>
+           
           </div>
         </div>
       )}
@@ -142,6 +143,7 @@ export default function Community({ isLoggedIn }) {
         <p>{post.body.substring(0, 100)}...</p>
         <p><em>By {post.username}</em></p>
         <span className="post-tag">#{post.category}</span>
+        
 
         {isAdmin && (
           <button
@@ -150,11 +152,14 @@ export default function Community({ isLoggedIn }) {
           >
             Delete
           </button>
+          
         )}
       </div>
     </Link>
+    
   ))}
 </div>
+
       )}
     </div>
   );

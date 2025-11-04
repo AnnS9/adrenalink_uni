@@ -74,9 +74,9 @@ def get_categories():
     return jsonify([dict(row) for row in cats])
 
 
-# -----------------------------------------------------------------------------
+
 # CREATE (POST)
-# -----------------------------------------------------------------------------
+
 @admin_bp.route("/users", methods=["POST"])
 @admin_required
 def add_user():
@@ -152,7 +152,7 @@ def add_place():
     )
 
     db = get_db()
-    # Ensure the referenced category exists
+    
     category = db.execute(
         "SELECT id FROM categories WHERE id = ?", (fields[-1],)
     ).fetchone()
@@ -171,9 +171,9 @@ def add_place():
     return jsonify({"message": "Place added successfully."}), 201
 
 
-# -----------------------------------------------------------------------------
+
 # UPDATE (PUT)
-# -----------------------------------------------------------------------------
+
 
 def _generic_update(table: str, item_id: int, data: Dict[str, Any]):
     if not data:
@@ -216,9 +216,9 @@ def update_place(item_id):
     return _generic_update("places", item_id, data)
 
 
-# -----------------------------------------------------------------------------
+
 # DELETE
-# -----------------------------------------------------------------------------
+
 
 @admin_bp.route("/users/<int:item_id>", methods=["DELETE"])
 @admin_required

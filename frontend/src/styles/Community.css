@@ -93,7 +93,7 @@
   position: relative;
   transition: all 0.2s ease;
    background-color: #4d4b4b79;
-  border: 1px solid #8b0202;
+  border: 1px solid #ed0000;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.6);
@@ -115,11 +115,11 @@
   display: block;
   margin-top: 0.5rem;
   font-size: 0.85rem;
-  color: #d1c1ff;
+  color: #8d3535;
 }
 
 .delete-btn {
-  background-color: #e74c3c;
+  background-color: #ed0000;
   color: white;
   border: none;
   padding: 6px 10px;
@@ -127,10 +127,23 @@
   cursor: pointer;
   margin-top: 8px;
   font-size: 14px;
+  
 }
 
 .delete-btn:hover {
-  background-color: #c0392b;
+  background-color: #ed0000;
+}
+
+.comment-form .sub-btn{
+  width: 100%;
+  font-weight: bold;
+  padding: 0.75rem 0;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  background-color: #ed0000;
+  transition: background-color 0.2s ease-in-out;
+  color: #fffefe;
 }
 
 .post-page {
@@ -175,32 +188,20 @@
 .comment-form textarea {
   width: 100%;
   min-height: 80px;
-  background-color: #ed00005d;
-  border: 1px solid #8b0202;
+  background-color: #dfd8d8be;
+  border: 1px solid #ed0000;
   border-radius: 8px;
   padding: 10px;
   font-size: 14px;
   color: white;
   margin-bottom: 10px;
   resize: vertical;
-}
-
-.comment-submit-btn {
-  background-color: #ed0000;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-family: 'Teko', sans-serif;
-  font-size: 14px;
-}
-
-.comment-submit-btn:hover {
-  background-color: #c70000;
+  font-family: 'Inter', sans-serif;
 }
 
 .comments-list {
+  width: 80%;
+  margin-left: 20%;
   list-style: none;
   padding: 0;
   margin-top: 20px;
@@ -208,7 +209,7 @@
 
 .comment-card {
   background-color: #4d4b4b79;
-  border: 1px solid #8b0202;
+  border: 1px solid #ed0000;
   border-radius: 8px;
   padding: 12px 15px;
   margin-bottom: 10px;

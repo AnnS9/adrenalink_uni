@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ConfirmModal from '../components/ConfirmModal';
+
+
 import '../styles/Profile.css';
 
 const AVAILABLE_ACTIVITIES = [
@@ -26,7 +27,6 @@ const ActivityIcon = ({ name }) => {
 
 export default function ProfilePage() {
   const [adrenaid, setProfile] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,10 +41,7 @@ export default function ProfilePage() {
       });
   }, [navigate]);
 
-  const handleDelete = () => {
-    fetch('/api/adrenaid', { method: 'DELETE', credentials: 'include' })
-      .then(() => navigate('/'));
-  };
+
 
   if (!adrenaid) return <div className="loading">Loading profile...</div>;
 
@@ -84,17 +81,11 @@ export default function ProfilePage() {
       <div className="profile-actions">
         <button onClick={() => navigate('/adrenaid/edit')}>Edit Profile</button>
         <button onClick={() => navigate('/tracks')}>Tracks</button>
-        <button className="danger" onClick={() => setShowConfirm(true)}>Delete Account</button>
+        
       </div>
-
-      {showConfirm && (
-        <ConfirmModal
-          title="Delete Account"
-          message="Are you sure you want to permanently delete your account? This action cannot be undone."
-          onConfirm={handleDelete}
-          onCancel={() => setShowConfirm(false)}
-        />
-      )}
+<br/>
+        <br/>
+     
     </div>
   );
 }

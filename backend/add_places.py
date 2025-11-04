@@ -3,7 +3,7 @@ import sqlite3
 connection = sqlite3.connect("./instance/data.db")
 cur = connection.cursor()
 
-# Clear existing UK places first (optional)
+
 cur.execute("DELETE FROM places WHERE location = 'UK'")
 
 # UK Places
@@ -46,4 +46,4 @@ for place in places_uk:
 connection.commit()
 connection.close()
 
-print("✅ UK Places added successfully.")
+print(" UK Places added successfully.")

@@ -306,8 +306,6 @@
 .avatar-item.selected {
   position: relative;
   
-  box-shadow: 0 0 12px 4px rgba(237, 0, 0, 0.5); 
-  
   transition: all 0.3s ease;
 }
 
@@ -370,4 +368,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.icon-space {
+  margin-right: 0.5rem; 
 }

@@ -81,7 +81,7 @@ h2{
   background-color: #ed0000;
   color: #fff;
   padding: 10px 16px;
-  border: none;             /* remove default 3D border */
+  border: none;            
   border-radius: 6px;
   cursor: pointer;
   font-size: 24px;
@@ -108,4 +108,8 @@ h2{
 
 .toggle-btn:hover {
   background-color: #660505;
+}
+.community-banner{
+  background-color: #e229291f;
+  position: relative;
 }

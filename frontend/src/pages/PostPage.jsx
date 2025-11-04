@@ -4,7 +4,7 @@ import "../styles/Community.css";
 
 export default function PostPage() {
   const { id } = useParams();
-  const navigate = useNavigate(); // <-- Add navigate
+  const navigate = useNavigate(); 
   const [post, setPost] = useState(null);
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
@@ -78,7 +78,7 @@ export default function PostPage() {
             onChange={e => setComment(e.target.value)}
             placeholder="Write a comment..."
           />
-          <button type="submit">Submit</button>
+          <button type="submit" class="sub-btn">Submit</button>
         </form>
         {error && <p className="error">{error}</p>}
       </div>

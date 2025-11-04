@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';  // <-- import Link
+import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -18,6 +18,13 @@ const customIcon = L.icon({
   popupAnchor: [0, -35],
 });
 
+// helpers
+const gmapsViewUrl = (lat, lng) =>
+  `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+const gmapsDirectionsUrl = (lat, lng) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
 export default function UkMap() {
   const [places, setPlaces] = useState([]);
 
@@ -34,16 +41,42 @@ export default function UkMap() {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
       />
-      {places.map((place) => (
-        <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
-          <Popup>
-            <strong>{place.name}</strong><br />
-            {place.description}<br />
-            {/* Added link to place page */}
-            <Link to={`/place/${place.id}`}>View Place Details</Link>
-          </Popup>
-        </Marker>
-      ))}
+
+      {places.map((place) => {
+        const { id, name, description, latitude, longitude } = place;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        return (
+          <Marker key={id} position={[lat, lng]} icon={customIcon}>
+            <Popup>
+              <strong>{name}</strong><br />
+              {description}<br />
+
+              <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+                <Link to={`/place/${id}`}>View Place Details</Link>
+
+                <a
+                  href={gmapsViewUrl(lat, lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open in Google Maps
+                </a>
+
+                <a
+                  href={gmapsDirectionsUrl(lat, lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Directions in Google Maps
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }
+

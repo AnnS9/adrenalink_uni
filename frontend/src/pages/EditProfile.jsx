@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Profile.css'; 
+import '../styles/Profile.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import ConfirmModal from '../components/ConfirmModal';
 
 const ActivityIcon = ({ name, image }) => (
   <div className="activity-icon">
@@ -29,6 +32,7 @@ const AVAILABLE_AVATARS = [
 
 export default function EditProfile() {
   const [form, setForm] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,27 +53,35 @@ export default function EditProfile() {
             new_password: ''
           });
         }
-      });
+      })
+      .catch(() => navigate('/'));
   }, [navigate]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleDelete = () => {
+    fetch('/api/adrenaid', { method: 'DELETE', credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error('Delete failed');
+        navigate('/');
+      })
+      .catch(() => setShowConfirm(false));
   };
 
   const handleActivityToggle = (activity) => {
-    const currentActivities = form.activities || [];
-    const newActivities = currentActivities.includes(activity)
-      ? currentActivities.filter(a => a !== activity)
-      : [...currentActivities, activity];
-    setForm({ ...form, activities: newActivities });
+    const current = form.activities || [];
+    const next = current.includes(activity)
+      ? current.filter(a => a !== activity)
+      : [...current, activity];
+    setForm(prev => ({ ...prev, activities: next }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const payload = { ...form };
-
-    
     if (!form.new_password) {
       delete payload.current_password;
       delete payload.new_password;
@@ -88,125 +100,154 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="edit-profile-container">
-      <header className="edit-profile-header">
-        <button onClick={() => navigate(-1)} className="back-button">
-           Back
-        </button>
-        <h1 className="header-title">
-          ADRENA<span className="header-title-brand">ID</span>
-        </h1>
-        <div className="header-spacer"></div>
-      </header>
-      
-      <form onSubmit={handleSubmit} className="edit-form">
-        <div className="profile-picture-wrapper">
-          <img
-            src={form.profile_picture || '/images/default_avatar.jpeg'}
-            alt="Profile"
-            className="profile-picture"
-          />
-        </div>
+    <>
+      <div className="edit-profile-container">
+        <header className="edit-profile-header">
+          <button onClick={() => navigate(-1)} className="back-button">
+            Back
+          </button>
+          <h1 className="header-title">
+            ADRENA<span className="header-title-brand">ID</span>
+          </h1>
+          <div className="header-spacer"></div>
+        </header>
 
-        {/* Password fields */}
-        <div className="form-group">
-          <label htmlFor="current_password" className="form-label">Current Password</label>
-          <input
-            id="current_password"
-            name="current_password"
-            type="password"
-            value={form.current_password}
-            onChange={handleChange}
-            placeholder="Enter your current password"
-            className="form-input"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="new_password" className="form-label">New Password</label>
-          <input
-            id="new_password"
-            name="new_password"
-            type="password"
-            value={form.new_password}
-            onChange={handleChange}
-            placeholder="Enter a new password (leave blank to keep existing)"
-            className="form-input"
-          />
-        </div>
-
-        {/* Activities */}
-        <div className="form-group">
-          <label className="form-label">Your Activities</label>
-          <div className="activity-grid">
-          {AVAILABLE_ACTIVITIES.map(activity => (
-            <button
-              key={activity.name}
-              type="button"
-              onClick={() => handleActivityToggle(activity.name)}
-              className={`activity-item ${form.activities.includes(activity.name) ? 'selected' : ''}`}
-            >
-              <ActivityIcon name={activity.name} image={activity.image} />
-            </button>
-          ))}
-        </div>
-        </div>
-
-        {/* Profile Details */}
-        <div className="form-group">
-          <label htmlFor="full_name" className="form-label">Name</label>
-          <input
-            id="full_name"
-            name="full_name"
-            value={form.full_name}
-            onChange={handleChange}
-            placeholder="What other users will see on your profile"
-            className="form-input"
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="location" className="form-label">Location</label>
-          <input
-            id="location"
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            placeholder="e.g., Scotland"
-            className="form-input"
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Choose a Profile Picture</label>
-          <div className="avatar-grid">
-            {AVAILABLE_AVATARS.map((avatar, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className={`avatar-item ${form.profile_picture === avatar ? 'selected' : ''}`}
-                onClick={() => setForm({ ...form, profile_picture: avatar })}
-              >
-                <img src={avatar} alt={`Avatar ${idx + 1}`} className="avatar-image" />
-              </button>
-            ))}
+        <form onSubmit={handleSubmit} className="edit-form">
+          <div className="profile-picture-wrapper">
+            <img
+              src={form.profile_picture || '/images/default_avatar.jpeg'}
+              alt="Profile"
+              className="profile-picture"
+            />
           </div>
-        </div>
 
-        {/* Buttons */}
-        <div className="button-group">
-          <button type="submit" className="btn btn-primary">
-            Save Changes
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/adrenaid')}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
+          
+          <div className="form-group">
+            <label htmlFor="current_password" className="form-label">Current Password</label>
+            <input
+              id="current_password"
+              name="current_password"
+              type="password"
+              value={form.current_password}
+              onChange={handleChange}
+              placeholder="Enter your current password"
+              className="form-input"
+              autoComplete="current-password"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="new_password" className="form-label">New Password</label>
+            <input
+              id="new_password"
+              name="new_password"
+              type="password"
+              value={form.new_password}
+              onChange={handleChange}
+              placeholder="Enter a new password (leave blank to keep existing)"
+              className="form-input"
+              autoComplete="new-password"
+            />
+          </div>
+
+        
+          <div className="form-group">
+            <label className="form-label">Your Activities</label>
+            <div className="activity-grid">
+              {AVAILABLE_ACTIVITIES.map(activity => (
+                <button
+                  key={activity.name}
+                  type="button"
+                  onClick={() => handleActivityToggle(activity.name)}
+                  className={`activity-item ${form.activities.includes(activity.name) ? 'selected' : ''}`}
+                  aria-pressed={form.activities.includes(activity.name)}
+                >
+                  <ActivityIcon name={activity.name} image={activity.image} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          
+          <div className="form-group">
+            <label htmlFor="full_name" className="form-label">Name</label>
+            <input
+              id="full_name"
+              name="full_name"
+              value={form.full_name}
+              onChange={handleChange}
+              placeholder="What other users will see on your profile"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="location" className="form-label">Location</label>
+            <input
+              id="location"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              placeholder="e.g., Scotland"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Choose a Profile Picture</label>
+            <div className="avatar-grid">
+              {AVAILABLE_AVATARS.map((avatar, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`avatar-item ${form.profile_picture === avatar ? 'selected' : ''}`}
+                  onClick={() => setForm(prev => ({ ...prev, profile_picture: avatar }))}
+                  aria-pressed={form.profile_picture === avatar}
+                >
+                  <img src={avatar} alt={`Avatar ${idx + 1}`} className="avatar-image" />
+                </button>
+              ))}
+            </div>
+
+       
+            <button
+              type="button"
+              className="btn btn-secondary danger"
+              onClick={() => setShowConfirm(true)}
+              aria-label="Delete account"
+              title="Delete account"
+            >
+              <FontAwesomeIcon icon={faTrashCan} className="icon-space" />
+              Delete Account
+            </button>
+          </div>
+
+       
+          <div className="button-group">
+            <button type="submit" className="btn btn-primary">
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/adrenaid')}
+              className="btn btn-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+        <br/>
+        <br/>
+      </div>
+
+      {showConfirm && (
+        <ConfirmModal
+          title="Delete Account"
+          message="Are you sure you want to permanently delete your account? This action cannot be undone."
+          onConfirm={handleDelete}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
   );
 }
