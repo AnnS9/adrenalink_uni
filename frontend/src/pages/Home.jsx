@@ -16,7 +16,7 @@ export default function Home({ isLoggedIn }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/categories")
+    fetch("/api/categories")
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(err => console.error(err));

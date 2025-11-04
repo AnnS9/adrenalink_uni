@@ -36,8 +36,28 @@ def create_app():
     except OSError:
         pass
 
-    # --CORS--
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5000"}}, supports_credentials=True)
+    # --- Session Cookie Settings ---
+    app.config.update(
+        SESSION_COOKIE_SAMESITE="Lax",   # or "None" if using HTTPS in production
+        SESSION_COOKIE_SECURE=False      # keep False for localhost
+    )
+
+    # --- CORS Setup ---
+    
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    )
 
     @app.teardown_appcontext
     def close_db(e=None):

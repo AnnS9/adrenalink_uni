@@ -87,11 +87,25 @@ function ProtectedRoute({ isAdmin, isAuthLoading, children }) {
 
 function AppContent() {
   const { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin } = useAuth();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [nextPath, setNextPath] = useState(null);
 
   const openAuthModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-  const handleLoginSuccess = (userData) => { manualLogin(userData); closeModal(); };
+  const openAuthWithNext = (next) => {
+    setNextPath(next || null);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setNextPath(null);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    manualLogin(userData);
+    closeModal();
+  };
 
   if (isAuthLoading) return <div>Loading...</div>;
 
@@ -106,7 +120,6 @@ function AppContent() {
         theme="colored"
       />
 
-      {/* Layout route wraps all pages and contains the single BottomMenu */}
       <Routes>
         <Route
           element={
@@ -120,7 +133,15 @@ function AppContent() {
           }
         >
           <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
-          <Route path="/category/:id" element={<CategoryPage isLoggedIn={isLoggedIn} />} />
+          <Route
+            path="/category/:id"
+            element={
+              <CategoryPage
+                isLoggedIn={isLoggedIn}
+                openAuth={openAuthWithNext}
+              />
+            }
+          />
           <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
           <Route path="/map" element={<UkMap />} />
           <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />
@@ -146,6 +167,7 @@ function AppContent() {
         isOpen={isModalOpen}
         onClose={closeModal}
         onLoginSuccess={handleLoginSuccess}
+        nextPath={nextPath}
       />
     </>
   );

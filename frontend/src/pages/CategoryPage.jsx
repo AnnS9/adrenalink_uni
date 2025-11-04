@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import '../styles/CategoryPage.css';
 import CategoryMap from './CategoryMap';
 
-export default function CategoryPage({ isLoggedIn }) {
+export default function CategoryPage({ isLoggedIn, openAuth }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
@@ -34,7 +34,7 @@ export default function CategoryPage({ isLoggedIn }) {
   if (error) return <div>Error: {error}</div>;
   if (!category) return <div>No category data found.</div>;
 
-  const nextParam = encodeURIComponent(`/category/${id}`);
+  const nextParam = `/category/${id}`;
 
   return (
     <div className="category-page alt-look">
@@ -44,24 +44,18 @@ export default function CategoryPage({ isLoggedIn }) {
       >
         <div className="hero-overlay">
           <h1 className="hero-title big">{category.name?.toUpperCase()}</h1>
-
-         
-         
-
-          
         </div>
       </header>
 
       <div className="page-container">
         <div className="toolbar">
-           <nav className="crumbs category">
+          <nav className="crumbs category">
             <Link to="/">Home</Link> <span>›</span> <span>{category.name}</span>
           </nav>
           <button
             onClick={() => setShowMap(!showMap)}
             className={`mapbutton ${showMap ? 'active' : ''}`}
           >
-           
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -85,7 +79,7 @@ export default function CategoryPage({ isLoggedIn }) {
               onClick={() => navigate('/community')}
               className="community-button"
             >
-              Community Space 
+              Community Space
             </button>
           )}
         </div>
@@ -95,7 +89,7 @@ export default function CategoryPage({ isLoggedIn }) {
             <p>🔒 Sign in to access the <strong>Community Hub</strong> and share your reviews.</p>
             <button
               className="btn-small"
-              onClick={() => navigate(`/login?next=${nextParam}`)}
+              onClick={() => openAuth(nextParam)}
             >
               Sign In
             </button>
@@ -150,4 +144,5 @@ export default function CategoryPage({ isLoggedIn }) {
     </div>
   );
 }
+
 
