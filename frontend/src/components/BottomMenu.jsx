@@ -47,7 +47,7 @@ export default function BottomMenu({
 
   return (
     <>
-      <a href="#main" className="skip-link">Skip to content</a>
+      
 
       <nav
         className={`bottom-menu ${scrolled ? 'scrolled' : ''}`}
