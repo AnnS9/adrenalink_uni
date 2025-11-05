@@ -6,9 +6,9 @@ import uuid
 from auth import require_admin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
-from sentence_transformers import SentenceTransformer, util
+# from sentence_transformers import SentenceTransformer, util
 
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 community_bp = Blueprint("community", __name__, url_prefix="/api/community")
 
@@ -327,52 +327,52 @@ def create_app():
             'user': {'id': user['id'], 'username': user['username'], 'role': user['role']}
         })
 
-    @app.route("/api/semantic-search", methods=["GET"])
-    def semantic_search():
-        query = request.args.get("q", "").strip()
-        if not query:
-            return jsonify([])
+    # @app.route("/api/semantic-search", methods=["GET"])
+    # def semantic_search():
+    #     query = request.args.get("q", "").strip()
+    #     if not query:
+    #         return jsonify([])
 
-        db = get_db()
+    #     db = get_db()
 
-        keyword_matches = db.execute("""
-            SELECT id, name, location, rating, description, category_id
-            FROM places
-            WHERE LOWER(name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(location) LIKE ?
-        """, (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")).fetchall()
-        keyword_matches = [dict(p) for p in keyword_matches]
+    #     keyword_matches = db.execute("""
+    #         SELECT id, name, location, rating, description, category_id
+    #         FROM places
+    #         WHERE LOWER(name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(location) LIKE ?
+    #     """, (f"%{query.lower()}%", f"%{query.lower()}%", f"%{query.lower()}%")).fetchall()
+    #     keyword_matches = [dict(p) for p in keyword_matches]
 
-        places = db.execute(
-            "SELECT id, name, location, rating, description, category_id FROM places"
-        ).fetchall()
-        places = [dict(p) for p in places]
+    #     places = db.execute(
+    #         "SELECT id, name, location, rating, description, category_id FROM places"
+    #     ).fetchall()
+    #     places = [dict(p) for p in places]
 
-        corpus = [
-            f"{p['name']} in {p['location']} rated {p['rating']} stars. {p['description']}"
-            for p in places
-        ]
+    #     corpus = [
+    #         f"{p['name']} in {p['location']} rated {p['rating']} stars. {p['description']}"
+    #         for p in places
+    #     ]
 
-        place_embeddings = embedding_model.encode(corpus, convert_to_tensor=True)
-        query_embedding = embedding_model.encode(query, convert_to_tensor=True)
+    #     place_embeddings = embedding_model.encode(corpus, convert_to_tensor=True)
+    #     query_embedding = embedding_model.encode(query, convert_to_tensor=True)
 
-        scores = util.pytorch_cos_sim(query_embedding, place_embeddings)[0]
+    #     scores = util.pytorch_cos_sim(query_embedding, place_embeddings)[0]
 
-        THRESHOLD = 0.45
-        semantic_matches = [
-            {**p, "score": float(s)}
-            for p, s in zip(places, scores)
-            if float(s) >= THRESHOLD
-        ]
-        semantic_matches.sort(key=lambda x: x["score"], reverse=True)
+    #     THRESHOLD = 0.45
+    #     semantic_matches = [
+    #         {**p, "score": float(s)}
+    #         for p, s in zip(places, scores)
+    #         if float(s) >= THRESHOLD
+    #     ]
+    #     semantic_matches.sort(key=lambda x: x["score"], reverse=True)
 
-        merged = {p["id"]: p for p in semantic_matches}
-        for p in keyword_matches:
-            merged[p["id"]] = {**p, "score": 1.0}
+    #     merged = {p["id"]: p for p in semantic_matches}
+    #     for p in keyword_matches:
+    #         merged[p["id"]] = {**p, "score": 1.0}
 
-        results = list(merged.values())
-        results.sort(key=lambda x: x["score"], reverse=True)
+    #     results = list(merged.values())
+    #     results.sort(key=lambda x: x["score"], reverse=True)
 
-        return jsonify(results[:10])
+    #     return jsonify(results[:10])
 
     @app.route("/api/search", methods=["GET"])
     def search_places():
