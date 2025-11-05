@@ -181,7 +181,7 @@ align-items: center;
   display: flex;
   flex-direction: column;
   grid-column: span 12;
-  background: #c9c6c6;
+  background: #f7f6f6;
   border: 1px solid #202022;
   border-radius: 14px;
   overflow: hidden;

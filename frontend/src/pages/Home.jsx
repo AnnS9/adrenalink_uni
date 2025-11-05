@@ -39,7 +39,7 @@ export default function Home({ isLoggedIn }) {
   return (
     <div className="homepage">
       <div className="container">
-        <img src="/images/logo1.png" alt="AdrenaLink Logo" className="logo" />
+        
         <h1>Pick Your Adrenaline</h1>
 
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>

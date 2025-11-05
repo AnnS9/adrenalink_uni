@@ -21,12 +21,25 @@ export default function BottomMenu({
 }) {
   const [scrolled, setScrolled] = useState(false);
 
-  // Detect scrolling
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 8);
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const mq = window.matchMedia('(min-width: 768px)');
+    const enableDesktopScroll = () => {
+      if (!mq.matches) {
+        setScrolled(false);
+        window.removeEventListener('scroll', onScroll, { passive: true });
+        return;
+      }
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+    };
+    const onScroll = () => setScrolled(window.scrollY > 8);
+
+    enableDesktopScroll();
+    mq.addEventListener?.('change', enableDesktopScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      mq.removeEventListener?.('change', enableDesktopScroll);
+    };
   }, []);
 
   const navLinkClasses = ({ isActive }) =>
@@ -41,7 +54,7 @@ export default function BottomMenu({
         role="navigation"
         aria-label="Primary"
       >
-        {/* Logo (visible on desktop) */}
+        {/* Desktop logo */}
         <NavLink to="/" className="desktop-logo-link" aria-label="Adrenalink home">
           <img src="/images/logo1.png" alt="Adrenalink" className="desktop-logo" />
         </NavLink>
@@ -80,7 +93,7 @@ export default function BottomMenu({
           </>
         )}
 
-        {/* Authentication controls */}
+        {/* Auth */}
         <div className="auth-buttons" role="group" aria-label="Account">
           {!isAuthLoading && (isLoggedIn ? (
             <button

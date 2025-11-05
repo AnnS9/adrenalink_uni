@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import Footer from './components/Footer';
 import BottomMenu from './components/BottomMenu';
 
 export default function AppLayout({
@@ -14,6 +15,8 @@ export default function AppLayout({
         
         <Outlet />
       </main>
+
+      <Footer />
 
       <BottomMenu
         isAuthLoading={isAuthLoading}

@@ -1,74 +1,61 @@
 :root {
   --brand: #ed0000;
   --text: #fff;
-  --nav-bg: rgba(17, 17, 17, 0.75); /* visible after scroll */
-  --nav-border: rgba(255, 255, 255, 0.1);
+  --nav-bg: rgba(17, 17, 17, 0.94);
+  --bottom-menu-height: 60px;
 }
 
-
-.skip-link {
-  position: absolute;
-  left: 8px;
-  top: -40px;
-  background: #000;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  z-index: 10000;
-}
-.skip-link:focus { top: 8px; }
-
-/* Base nav (mobile bottom bar) */
 .bottom-menu {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
   position: fixed;
   z-index: 1000;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 58px;
-  background-color: rgba(17, 17, 17, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 4px;
+  height: var(--bottom-menu-height);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  background-color: var(--nav-bg);
   box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
   color: var(--text);
   font-weight: 600;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  overflow: visible;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
-/* Nav items */
+main, .page-container, .app-shell main {
+  padding-bottom: calc(var(--bottom-menu-height) + env(safe-area-inset-bottom, 0px));
+}
+
 .nav-item {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   height: 100%;
-  min-width: 56px;
-  padding: 6px 6px;
-  font-size: 12px;
+  min-width: 40px;
+  padding: 6px 8px;
+  gap: 4px;
+  font-size: 11px;
   color: inherit;
   text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.2s ease;
   position: relative;
+  transition: color .2s ease;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 .nav-item .label { line-height: 1; }
 .nav-item svg { width: 22px; height: 22px; }
 
-.nav-item:focus-visible,
-.desktop-logo-link:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-/* Hide logo on mobile */
 .desktop-logo-link { display: none; }
 
-/* Desktop styles */
 @media (min-width: 768px) {
   .bottom-menu {
     top: 0;
@@ -77,24 +64,8 @@
     padding: 0 28px;
     justify-content: flex-end;
     gap: 8px;
-    border-bottom: 1px solid transparent;
-    background-color: rgba(0, 0, 255, 0);
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    transition:
-      background-color 200ms ease,
-      box-shadow 200ms ease,
-      backdrop-filter 200ms ease,
-      border-color 200ms ease;
-  }
-
- 
-  .bottom-menu.scrolled {
     background-color: var(--nav-bg);
-    backdrop-filter: saturate(160%) blur(10px);
-    -webkit-backdrop-filter: saturate(160%) blur(10px);
-    border-bottom-color: var(--nav-border);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   }
 
@@ -104,13 +75,8 @@
     align-items: center;
     height: 100%;
   }
+  .desktop-logo { height: 22px; display: block; }
 
-  .desktop-logo {
-    display: block;
-    height: 22px;
-  }
-
-  /* Horizontal items */
   .nav-item {
     flex-direction: row;
     gap: 8px;
@@ -119,12 +85,9 @@
     padding: 10px 14px;
     height: auto;
     min-width: auto;
-    border-radius: 8px;
   }
-
   .nav-item svg { display: none; }
 
-  /* Underline animation */
   .nav-item.is-link::after {
     content: '';
     position: absolute;
@@ -136,28 +99,18 @@
     border-radius: 2px;
     transform: scaleX(0);
     transform-origin: center;
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    transition: transform .2s ease, background-color .2s ease;
   }
-
   .nav-item.is-link:hover::after,
   .nav-item.is-link.active::after {
     background-color: var(--brand);
     transform: scaleX(1);
   }
-
-  .nav-item.is-button:hover {
-    background-color: rgba(255,255,255,0.07);
-  }
-
-  /* Prevent overlap with top nav */
-  .app-layout > main {
-    padding-top: 64px;
-  }
+  .nav-item.is-button:hover { background-color: rgba(255,255,255,0.07); }
+  .app-layout > main { padding-top: 64px; }
 }
 
-/* Mobile styles */
 @media (max-width: 767.98px) {
-  .nav-item { color: #e9eaeb; }
-  .nav-item.active { color: #fff; }
-  .nav-item svg { display: block; }
+  .nav-item .label { display: none; }
+  .nav-item svg { width: 24px; height: 24px; }
 }

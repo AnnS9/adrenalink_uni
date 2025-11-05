@@ -20,12 +20,16 @@ const customMarkerIcon = new L.Icon({
 
 export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const { id } = useParams();
-  
+
   const [place, setPlace] = useState({ reviews: [], latitude: null, longitude: null });
   const [showMap, setShowMap] = useState(false);
   const [reviewText, setReviewText] = useState('');
   const [rating, setRating] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+
+  // For breadcrumbs
+  const [categoryId, setCategoryId] = useState(null);
+  const [categoryName, setCategoryName] = useState(null);
 
   // Fetch place data
   useEffect(() => {
@@ -34,9 +38,25 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       .then(data => {
         setPlace({ ...data, reviews: data.reviews || [] });
         if (data.is_favorited) setIsFavorited(true);
+
+        // Capture category info for breadcrumbs if provided
+        if (data.category_id) setCategoryId(data.category_id);
+        if (data.category_name) setCategoryName(data.category_name);
       })
       .catch(err => console.error('Failed to fetch place:', err));
   }, [id]);
+
+  // If we have an id but no name, fetch the category name for breadcrumbs
+  useEffect(() => {
+    if (categoryId && !categoryName) {
+      fetch(`/api/category/${categoryId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(cat => {
+          if (cat?.name) setCategoryName(cat.name);
+        })
+        .catch(() => {});
+    }
+  }, [categoryId, categoryName]);
 
   // Add to track
   const handleAddToTrack = async () => {
@@ -96,7 +116,9 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
 
       setPlace(prev => {
         const updatedReviews = [savedReview, ...(prev.reviews || [])];
-        const avgRating = updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / updatedReviews.length;
+        const avgRating =
+          updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) /
+          updatedReviews.length;
         return { ...prev, reviews: updatedReviews, rating: avgRating };
       });
 
@@ -133,7 +155,6 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       });
   };
 
-  
   const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar
@@ -152,19 +173,43 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         <button className="back-button" onClick={() => window.history.back()}>Back</button>
       </header>
 
+      {/* Breadcrumbs */}
+      <nav className="breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><Link to="/">Home</Link></li>
+          {categoryId && (
+            <li>
+              <Link to={`/category/${categoryId}`}>
+                {categoryName || 'Category'}
+              </Link>
+            </li>
+          )}
+          <li aria-current="page">{place.name || 'Place'}</li>
+        </ol>
+      </nav>
+
       <div className="image-container">
         <img src={place.image} alt={place.name} className="place-image" />
         <div className="place-details">
           <div className="map-button-container-horizontal">
             <div className="map-button-item">
-              <button className="map-toggle-icon" onClick={() => setShowMap(!showMap)} title={showMap ? 'Hide Map' : 'View Map'}>
+              <button
+                className="map-toggle-icon"
+                onClick={() => setShowMap(!showMap)}
+                title={showMap ? 'Hide Map' : 'View Map'}
+              >
                 <FaArrowsAlt />
               </button>
               <div className="map-toggle-label">{showMap ? 'Hide Map' : 'View Map'}</div>
             </div>
             {isLoggedIn && (
               <div className="track-button-item">
-                <button className="track-icon" onClick={handleAddToTrack} title={isFavorited ? 'Already in Track' : 'Add to Tracks'} disabled={isFavorited}>
+                <button
+                  className="track-icon"
+                  onClick={handleAddToTrack}
+                  title={isFavorited ? 'Already in Track' : 'Add to Tracks'}
+                  disabled={isFavorited}
+                >
                   <FaPlus color={isFavorited ? 'yellow' : 'white'} />
                 </button>
                 <div className="track-label">{isFavorited ? 'In Track' : 'Add Track'}</div>
@@ -175,14 +220,20 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
           <h2 className="placename">{place.name}</h2>
           <div className="rating-display">
             {renderStars(Math.round(place.rating || 0))}
-            <span style={{ marginLeft: 6, color: '#666' }}>({place.rating?.toFixed(1) || "0.0"})</span>
+            <span style={{ marginLeft: 6, color: '#666' }}>
+              ({place.rating?.toFixed(1) || "0.0"})
+            </span>
           </div>
           <p className="address">{place.location}</p>
           <p className="description">{place.description}</p>
 
           {showMap && place.latitude && place.longitude && (
             <div className="map-container" style={{ height: '300px', width: '100%' }}>
-              <MapContainer center={[place.latitude, place.longitude]} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <MapContainer
+                center={[place.latitude, place.longitude]}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+              >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
@@ -207,33 +258,54 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
             <div className="rating-input">
               Rate this location:{' '}
               {[1,2,3,4,5].map(star => (
-                <span key={star} onClick={() => setRating(star)} style={{ color: star <= rating ? '#ed0000' : '#ccc', cursor: 'pointer', fontSize: '1.5rem' }}>★</span>
+                <span
+                  key={star}
+                  onClick={() => setRating(star)}
+                  style={{
+                    color: star <= rating ? '#ed0000' : '#ccc',
+                    cursor: 'pointer',
+                    fontSize: '1.5rem'
+                  }}
+                >
+                  ★
+                </span>
               ))}
             </div>
-            <textarea placeholder="Write a review..." value={reviewText} onChange={e => setReviewText(e.target.value)} />
+            <textarea
+              placeholder="Write a review..."
+              value={reviewText}
+              onChange={e => setReviewText(e.target.value)}
+            />
             <button className="submit-review" onClick={handleSubmitReview}>Submit</button>
           </div>
-        ) : <p className="login-warning">You must be logged in to leave a review.</p>}
+        ) : (
+          <p className="login-warning">You must be logged in to leave a review.</p>
+        )}
 
         <div className="reviews-list">
-  {place.reviews?.map(review => (
-    <div key={review.id} className="review">
-      {review.user_id ? (
-        <Link to={`/users/${review.user_id}`} className="review-author-link">
-          {review.author ?? 'Anonymous'}
-        </Link>
-      ) : (
-        <strong>{review.author ?? 'Anonymous'}</strong>
-      )}
-      <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
-      <p>{review.text}</p>
-      <small>{new Date(review.created_at).toLocaleDateString()}</small>
-      {userRole === 'admin' && (
-        <button className="delete-review" onClick={() => handleDeleteReview(review.id)}>Delete</button>
-      )}
-    </div>
-  ))}
-</div>
+          {place.reviews?.map(review => (
+            <div key={review.id} className="review">
+              {review.user_id ? (
+                <Link to={`/users/${review.user_id}`} className="review-author-link">
+                  {review.author ?? 'Anonymous'}
+                </Link>
+              ) : (
+                <strong>{review.author ?? 'Anonymous'}</strong>
+              )}
+              <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
+              <p>{review.text}</p>
+              <small>{new Date(review.created_at).toLocaleDateString()}</small> <br />
+              {userRole === 'admin' && (
+                <button
+                  className="delete-review"
+                  onClick={() => handleDeleteReview(review.id)}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

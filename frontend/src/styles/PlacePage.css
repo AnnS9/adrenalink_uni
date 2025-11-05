@@ -149,7 +149,7 @@ color: rgb(184, 28, 28);
   margin-top: 2rem;
 }
 .review-author-link {
-  color: #ed0000;
+  color: #aaa8a8;
   font-weight: bold;
   text-decoration: none;
 }
@@ -311,4 +311,38 @@ textarea:focus {
   textarea {
     min-height: 100px;
   }
+}
+.breadcrumbs {
+  margin: 12px 16px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.breadcrumbs ol {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.breadcrumbs li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbs li + li::before {
+  content: "›";
+  margin: 0 6px;
+  color: #aaa;
+}
+
+.breadcrumbs a {
+  color: #444;
+  text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+  text-decoration: underline;
 }
