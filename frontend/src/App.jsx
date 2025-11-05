@@ -19,6 +19,8 @@ import PublicProfile from './pages/PublicProfile';
 import PublicUserTracks from './pages/PublicUserTracks';
 import PostPage from './pages/PostPage';
 
+const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -40,8 +42,9 @@ function useAuth() {
 
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch('/api/check-auth', { credentials: 'include' });
-        const data = await response.json();
+        const res = await fetch(`${BASE}/api/check-auth`, { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
         if (isMounted) {
           setIsLoggedIn(data.logged_in);
           setUserRole(data.user?.role || null);
@@ -62,7 +65,7 @@ function useAuth() {
   }, []);
 
   const handleLogout = useCallback(() => {
-    fetch('/api/logout', { method: 'POST', credentials: 'include' }).then(() => {
+    fetch(`${BASE}/api/logout`, { method: 'POST', credentials: 'include' }).then(() => {
       setIsLoggedIn(false);
       setUserRole(null);
       localStorage.removeItem('userRole');

@@ -9,15 +9,18 @@ const PROMO_TEXTS = [
   "Track your favorite places",
 ];
 
+const BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
 export default function Home({ isLoggedIn }) {
   const [categories, setCategories] = useState([]);
-  // const [searchQuery, setSearchQuery] = useState("");
   const [promoIndex, setPromoIndex] = useState(0);
-  // const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("/api/categories")
-      .then(res => res.json())
+    fetch(`${BASE}/api/categories`, { credentials: "include" })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(data => setCategories(data))
       .catch(err => console.error(err));
   }, []);
@@ -26,38 +29,14 @@ export default function Home({ isLoggedIn }) {
     const interval = setInterval(() => {
       setPromoIndex(prev => (prev + 1) % PROMO_TEXTS.length);
     }, 3000);
-
     return () => clearInterval(interval);
-  }, []); 
-
-  // const handleSearch = e => {
-  //   e.preventDefault();
-  //   if (!searchQuery.trim()) return;
-  //   navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-  // };
+  }, []);
 
   return (
     <div className="homepage">
       <div className="container">
-        
         <h1>Pick Your Adrenaline</h1>
-
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>
-
-        {/* <form onSubmit={handleSearch} className="search-bar">
-        <label htmlFor="searchInput" className="visually-hidden">
-          Search categories
-        </label>
-        <input
-          id="searchInput"
-          type="text"
-          placeholder="Search categories..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-        <button type="submit">Search</button>
-      </form> */}
-
         <div className="grid">
           {categories.map(({ id, name, image }) => (
             <Link to={`/category/${id}`} key={id}>
@@ -75,4 +54,3 @@ export default function Home({ isLoggedIn }) {
     </div>
   );
 }
-
