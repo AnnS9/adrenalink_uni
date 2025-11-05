@@ -44,7 +44,7 @@ export default function Home({ isLoggedIn }) {
 
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>
 
-        <form onSubmit={handleSearch} className="search-bar">
+        {/* <form onSubmit={handleSearch} className="search-bar">
         <label htmlFor="searchInput" className="visually-hidden">
           Search categories
         </label>
@@ -56,7 +56,7 @@ export default function Home({ isLoggedIn }) {
           onChange={e => setSearchQuery(e.target.value)}
         />
         <button type="submit">Search</button>
-      </form>
+      </form> */}
 
         <div className="grid">
           {categories.map(({ id, name, image }) => (
