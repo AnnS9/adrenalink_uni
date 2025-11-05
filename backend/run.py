@@ -12,60 +12,70 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 community_bp = Blueprint("community", __name__, url_prefix="/api/community")
 
-# --- Database ---
 def get_db():
     if 'db' not in g:
-        db_path = os.path.join(current_app.instance_path, 'data.db')
+        db_path = current_app.config.get('DATABASE') or os.path.join(current_app.instance_path, 'instance/data.db')
         g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row
     return g.db
 
+def _split_origins(val):
+    if not val:
+        return []
+    return [o.strip() for o in val.split(",") if o.strip()]
 
-# --- Flask App  ---
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
 
-    app.config.from_mapping(
-        SECRET_KEY=os.getenv('FLASK_SECRET_KEY', 'your-default-secret-key'),
-        DATABASE=os.path.join(app.instance_path, 'data.db'),
-        PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-    )
-
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
-    # --- Session Cookie Settings ---
-    app.config.update(
-        SESSION_COOKIE_SAMESITE="Lax",   # or "None" if using HTTPS in production
-        SESSION_COOKIE_SECURE=False      # keep False for localhost
-    )
-
-    # --- CORS Setup ---
-    
-    ALLOWED_ORIGINS = [
+    is_production = os.getenv("FLASK_ENV", "production") == "production"
+    frontend_env = os.getenv("CORS_ORIGINS", "")
+    default_local_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+    allowed_origins = _split_origins(frontend_env) or default_local_origins
+
+    db_env = os.getenv("DATABASE", "")
+    db_path = db_env or os.path.join(app.instance_path, "data.db")
+
+    app.config.from_mapping(
+        SECRET_KEY=os.getenv("FLASK_SECRET_KEY", "change-me"),
+        DATABASE=db_path,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    )
+
+    if not db_env:
+        try:
+            os.makedirs(app.instance_path, exist_ok=True)
+        except OSError:
+            pass
+
+    app.config.update(
+        SESSION_COOKIE_SAMESITE="None" if is_production else "Lax",
+        SESSION_COOKIE_SECURE=True if is_production else False,
+        SESSION_COOKIE_HTTPONLY=True,
+    )
 
     CORS(
         app,
-        resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
+        resources={r"/api/*": {"origins": allowed_origins}},
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
 
     @app.teardown_appcontext
     def close_db(e=None):
-        db = g.pop('db', None)
+        db = g.pop("db", None)
         if db:
             db.close()
 
-    # --- Initialize DB & Blueprints ---
+    @app.get("/api/health")
+    def health():
+        return {"status": "ok"}, 200
+
     with app.app_context():
         from db import init_app
         init_app(app)
@@ -73,9 +83,8 @@ def create_app():
         from admin import admin_bp
         app.register_blueprint(auth_bp)
         app.register_blueprint(admin_bp)
-        app.register_blueprint(community_bp) 
+        app.register_blueprint(community_bp)
 
-    # --- Category & Place Routes ---
     @app.route('/api/categories', methods=['GET'])
     def get_all_categories():
         db = get_db()
@@ -131,7 +140,6 @@ def create_app():
             "places": places_with_ratings
         })
 
-    # --- User Favorites ---
     @app.route('/api/user/favorites', methods=['GET'])
     def get_favorite_places():
         user_id = session.get('user_id')
@@ -190,7 +198,6 @@ def create_app():
 
         return jsonify({'message': 'Removed from favorites'}), 200
 
-    # --- Place & Review Routes ---
     @app.route('/api/place/<int:id>', methods=['GET'])
     def get_place(id):
         db = get_db()
@@ -301,7 +308,6 @@ def create_app():
             user_dict['activities'] = []
         return jsonify(user_dict)
 
-    # --- Auth Check ---
     @app.route('/api/check-auth', methods=['GET'])
     def check_auth():
         user_id = session.get('user_id')
@@ -310,7 +316,8 @@ def create_app():
 
         db = get_db()
         user = db.execute(
-            "SELECT id, username, role FROM users WHERE id = ?", (user_id,)
+            "SELECT id, username, role FROM users WHERE id = ?",
+            (user_id,)
         ).fetchone()
         if not user:
             return jsonify({'logged_in': False})
@@ -320,7 +327,6 @@ def create_app():
             'user': {'id': user['id'], 'username': user['username'], 'role': user['role']}
         })
 
-    # --- Semantic Search ---
     @app.route("/api/semantic-search", methods=["GET"])
     def semantic_search():
         query = request.args.get("q", "").strip()
@@ -381,88 +387,7 @@ def create_app():
 
     return app
 
-
-# --- Forum Blueprint Routes ---
-@community_bp.route("", methods=["GET"])
-def get_posts():
-    db = get_db()
-    posts = db.execute("SELECT * FROM forum_posts ORDER BY created_at DESC").fetchall()
-    return jsonify({"posts": [dict(p) for p in posts]})
-
-
-@community_bp.route("", methods=["POST"])
-def create_post():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json(force=True) or {}
-    title, body, category = data.get("title", "").strip(), data.get("body", "").strip(), data.get("category", "").strip()
-
-    if not title or not body or not category:
-        return jsonify({"error": "All fields are required"}), 400
-
-    db = get_db()
-    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    post_id = str(uuid.uuid4())
-    db.execute(
-        "INSERT INTO forum_posts (id, category, title, body, username) VALUES (?, ?, ?, ?, ?)",
-        (post_id, category, title, body, user["username"])
-    )
-    db.commit()
-
-    new_post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
-    return jsonify({"post": dict(new_post)}), 201
-
-
-@community_bp.route("/<string:post_id>", methods=["GET"])
-def get_post(post_id):
-    db = get_db()
-    post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
-    if not post:
-        return jsonify({"error": "Post not found"}), 404
-
-    comments = db.execute("SELECT * FROM forum_comments WHERE post_id = ? ORDER BY created_at DESC", (post_id,)).fetchall()
-    return jsonify({**dict(post), "comments": [dict(c) for c in comments]})
-
-
-@community_bp.route("/<string:post_id>/comments", methods=["POST"])
-def add_comment(post_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.get_json(force=True) or {}
-    body = data.get("body", "").strip()
-    if not body:
-        return jsonify({"error": "Comment cannot be empty"}), 400
-
-    db = get_db()
-    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    db.execute(
-        "INSERT INTO forum_comments (post_id, username, body) VALUES (?, ?, ?)",
-        (post_id, user["username"], body)
-    )
-    db.commit()
-
-    return jsonify({"message": "Comment added"}), 201
-
-
-@community_bp.route("/<string:post_id>", methods=["DELETE"])
-@require_admin
-def delete_post(post_id):
-    db = get_db()
-    db.execute("DELETE FROM forum_posts WHERE id = ?", (post_id,))
-    db.commit()
-    return jsonify({"message": "Post deleted"}), 200
-
+app = create_app()
 
 if __name__ == "__main__":
-    app = create_app()
     app.run(debug=True)
