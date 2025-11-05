@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "../styles/global.css";
 
 const PROMO_TEXTS = [
@@ -11,9 +11,9 @@ const PROMO_TEXTS = [
 
 export default function Home({ isLoggedIn }) {
   const [categories, setCategories] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
   const [promoIndex, setPromoIndex] = useState(0);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   useEffect(() => {
     fetch("/api/categories")
@@ -30,11 +30,11 @@ export default function Home({ isLoggedIn }) {
     return () => clearInterval(interval);
   }, []); 
 
-  const handleSearch = e => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-  };
+  // const handleSearch = e => {
+  //   e.preventDefault();
+  //   if (!searchQuery.trim()) return;
+  //   navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+  // };
 
   return (
     <div className="homepage">
