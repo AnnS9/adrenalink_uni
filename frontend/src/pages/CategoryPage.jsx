@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import '../styles/CategoryPage.css';
 import CategoryMap from './CategoryMap';
 
+const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 export default function CategoryPage({ isLoggedIn, openAuth }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -14,8 +16,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-
-    fetch(`http://localhost:5000/api/category/${id}`)
+    fetch(`${BASE}/api/category/${id}`, { credentials: 'include' })
       .then((res) => {
         if (!res.ok) throw new Error(`Failed to fetch category ${id}: ${res.statusText}`);
         return res.json();
@@ -34,7 +35,6 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
   if (error) return <div>Error: {error}</div>;
   if (!category) return <div>No category data found.</div>;
 
-  const nextParam = `/category/${id}`;
 
   return (
     <div className="category-page alt-look">
@@ -52,6 +52,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
           <nav className="crumbs category">
             <Link to="/">Home</Link> <span>›</span> <span>{category.name}</span>
           </nav>
+
           <button
             onClick={() => setShowMap(!showMap)}
             className={`mapbutton ${showMap ? 'active' : ''}`}
@@ -89,7 +90,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
             <p>🔒 Sign in to access the <strong>Community Hub</strong> and share your reviews.</p>
             <button
               className="btn-small"
-              onClick={() => openAuth(nextParam)}
+              onClick={() => openAuth(`/category/${id}`)}
             >
               Sign In
             </button>
@@ -144,5 +145,3 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
     </div>
   );
 }
-
-
