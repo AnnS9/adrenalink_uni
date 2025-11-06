@@ -80,7 +80,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
               onClick={() => navigate('/community')}
               className="community-button"
             >
-              Community Space
+              Community Hub
             </button>
           )}
         </div>

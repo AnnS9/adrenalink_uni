@@ -1,13 +1,13 @@
-import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { FaStar, FaArrowsAlt, FaPlus } from 'react-icons/fa';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import L from 'leaflet';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import 'leaflet/dist/leaflet.css';
-import '../styles/PlacePage.css';
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { FaStar, FaArrowsAlt, FaPlus } from "react-icons/fa";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { Link } from "react-router-dom";
+import L from "leaflet";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "leaflet/dist/leaflet.css";
+import "../styles/PlacePage.css";
 
 const customMarkerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -18,102 +18,85 @@ const customMarkerIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+const BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
 export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const { id } = useParams();
-
   const [place, setPlace] = useState({ reviews: [], latitude: null, longitude: null });
   const [showMap, setShowMap] = useState(false);
-  const [reviewText, setReviewText] = useState('');
+  const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
-  // For breadcrumbs
-  const [categoryId, setCategoryId] = useState(null);
-  const [categoryName, setCategoryName] = useState(null);
-
-  // Fetch place data
   useEffect(() => {
-    fetch(`/api/place/${id}`, { credentials: 'include' })
-      .then(res => res.json())
+    setLoadError("");
+    fetch(`${BASE}/api/place/${id}`, { credentials: "include" })
+      .then(async res => {
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
         setPlace({ ...data, reviews: data.reviews || [] });
         if (data.is_favorited) setIsFavorited(true);
-
-        // Capture category info for breadcrumbs if provided
-        if (data.category_id) setCategoryId(data.category_id);
-        if (data.category_name) setCategoryName(data.category_name);
       })
-      .catch(err => console.error('Failed to fetch place:', err));
+      .catch(err => setLoadError(err.message));
   }, [id]);
 
-  // If we have an id but no name, fetch the category name for breadcrumbs
-  useEffect(() => {
-    if (categoryId && !categoryName) {
-      fetch(`/api/category/${categoryId}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(cat => {
-          if (cat?.name) setCategoryName(cat.name);
-        })
-        .catch(() => {});
-    }
-  }, [categoryId, categoryName]);
-
-  // Add to track
   const handleAddToTrack = async () => {
     if (!isLoggedIn) {
-      toast.info('You must be logged in to add to track.');
+      toast.info("You must be logged in to add to track.");
       return;
     }
     try {
-      const response = await fetch(`/api/user/favorites`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch(`${BASE}/api/user/favorites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ placeId: id }),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add to track');
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || "Failed to add to track");
       }
       setIsFavorited(true);
-      toast.success('Place added to your track!');
-    } catch (error) {
-      toast.error(error.message);
+      toast.success("Place added to your track!");
+    } catch (e) {
+      toast.error(e.message);
     }
   };
 
-  // Submit review
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {
-      toast.info('You must be logged in to leave a review.');
+      toast.info("You must be logged in to leave a review.");
       return;
     }
     if (!reviewText.trim()) {
-      toast.error('Please enter a review.');
+      toast.error("Please enter a review.");
       return;
     }
     if (!rating || rating < 1 || rating > 5) {
-      toast.error('Please select a rating between 1 and 5.');
+      toast.error("Please select a rating between 1 and 5.");
       return;
     }
-
     try {
-      const res = await fetch(`/api/place/${id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch(`${BASE}/api/place/${id}/review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ text: reviewText.trim(), rating }),
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to submit review.');
+        const t = await res.text();
+        throw new Error(t || "Failed to submit review.");
       }
-
       const savedReview = await res.json();
       savedReview.rating = Number(savedReview.rating);
-      savedReview.author = savedReview.author || currentUser?.username || 'Anonymous';
+      savedReview.author = savedReview.author || currentUser?.username || "Anonymous";
       savedReview.created_at = savedReview.created_at || new Date().toISOString();
-
       setPlace(prev => {
         const updatedReviews = [savedReview, ...(prev.reviews || [])];
         const avgRating =
@@ -121,51 +104,44 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
           updatedReviews.length;
         return { ...prev, reviews: updatedReviews, rating: avgRating };
       });
-
       setRating(0);
-      setReviewText('');
-      toast.success('Review submitted!');
+      setReviewText("");
+      toast.success("Review submitted!");
     } catch (err) {
       toast.error(err.message);
-      console.error(err);
     }
   };
 
-  // Delete review
-  const handleDeleteReview = (reviewId) => {
-    if (!window.confirm('Delete this review?')) return;
-    fetch(`/api/review/${reviewId}`, { method: 'DELETE', credentials: 'include' })
-      .then(res => {
-        if (res.ok) {
-          setPlace(prev => {
-            const updatedReviews = prev.reviews.filter(r => r.id !== reviewId);
-            const avgRating = updatedReviews.length > 0
-              ? updatedReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / updatedReviews.length
-              : 0;
-            return { ...prev, reviews: updatedReviews, rating: avgRating };
-          });
-          toast.success('Review deleted.');
-        } else {
-          toast.error('Failed to delete review.');
-        }
-      })
-      .catch(err => {
-        console.error('Delete failed:', err);
-        toast.error('Failed to delete review.');
+  const handleDeleteReview = async reviewId => {
+    if (!window.confirm("Delete this review?")) return;
+    try {
+      const res = await fetch(`${BASE}/api/review/${reviewId}`, {
+        method: "DELETE",
+        credentials: "include",
       });
+      if (!res.ok) throw new Error("Failed to delete review.");
+      setPlace(prev => {
+        const updatedReviews = prev.reviews.filter(r => r.id !== reviewId);
+        const avgRating =
+          updatedReviews.length > 0
+            ? updatedReviews.reduce((s, r) => s + (Number(r.rating) || 0), 0) /
+              updatedReviews.length
+            : 0;
+        return { ...prev, reviews: updatedReviews, rating: avgRating };
+      });
+      toast.success("Review deleted.");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
-  const renderStars = (value) =>
+  const renderStars = value =>
     [...Array(5)].map((_, i) => (
-      <FaStar
-        key={i}
-        color={i < value ? '#ed0000' : '#ccc'}
-        size={16}
-        style={{ marginRight: 2 }}
-      />
+      <FaStar key={i} color={i < value ? "#ed0000" : "#ccc"} size={16} style={{ marginRight: 2 }} />
     ));
 
-  if (!place) return <div>Loading...</div>;
+  if (loadError) return <div className="place-page"><div className="error">{loadError}</div></div>;
+  if (!place || !place.id) return <div>Loading...</div>;
 
   return (
     <div className="place-page">
@@ -173,46 +149,22 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         <button className="back-button" onClick={() => window.history.back()}>Back</button>
       </header>
 
-      {/* Breadcrumbs */}
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <ol>
-          <li><Link to="/">Home</Link></li>
-          {categoryId && (
-            <li>
-              <Link to={`/category/${categoryId}`}>
-                {categoryName || 'Category'}
-              </Link>
-            </li>
-          )}
-          <li aria-current="page">{place.name || 'Place'}</li>
-        </ol>
-      </nav>
-
       <div className="image-container">
         <img src={place.image} alt={place.name} className="place-image" />
         <div className="place-details">
           <div className="map-button-container-horizontal">
             <div className="map-button-item">
-              <button
-                className="map-toggle-icon"
-                onClick={() => setShowMap(!showMap)}
-                title={showMap ? 'Hide Map' : 'View Map'}
-              >
+              <button className="map-toggle-icon" onClick={() => setShowMap(!showMap)} title={showMap ? "Hide Map" : "View Map"}>
                 <FaArrowsAlt />
               </button>
-              <div className="map-toggle-label">{showMap ? 'Hide Map' : 'View Map'}</div>
+              <div className="map-toggle-label">{showMap ? "Hide Map" : "View Map"}</div>
             </div>
             {isLoggedIn && (
               <div className="track-button-item">
-                <button
-                  className="track-icon"
-                  onClick={handleAddToTrack}
-                  title={isFavorited ? 'Already in Track' : 'Add to Tracks'}
-                  disabled={isFavorited}
-                >
-                  <FaPlus color={isFavorited ? 'yellow' : 'white'} />
+                <button className="track-icon" onClick={handleAddToTrack} title={isFavorited ? "Already in Track" : "Add to Tracks"} disabled={isFavorited}>
+                  <FaPlus color={isFavorited ? "yellow" : "white"} />
                 </button>
-                <div className="track-label">{isFavorited ? 'In Track' : 'Add Track'}</div>
+                <div className="track-label">{isFavorited ? "In Track" : "Add Track"}</div>
               </div>
             )}
           </div>
@@ -220,24 +172,15 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
           <h2 className="placename">{place.name}</h2>
           <div className="rating-display">
             {renderStars(Math.round(place.rating || 0))}
-            <span style={{ marginLeft: 6, color: '#666' }}>
-              ({place.rating?.toFixed(1) || "0.0"})
-            </span>
+            <span style={{ marginLeft: 6, color: "#666" }}>({place.rating?.toFixed(1) || "0.0"})</span>
           </div>
           <p className="address">{place.location}</p>
           <p className="description">{place.description}</p>
 
           {showMap && place.latitude && place.longitude && (
-            <div className="map-container" style={{ height: '300px', width: '100%' }}>
-              <MapContainer
-                center={[place.latitude, place.longitude]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-                />
+            <div className="map-container" style={{ height: "300px", width: "100%" }}>
+              <MapContainer center={[place.latitude, place.longitude]} zoom={13} style={{ height: "100%", width: "100%" }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>' />
                 <Marker position={[place.latitude, place.longitude]} icon={customMarkerIcon}>
                   <Popup>
                     <div className="popup-header"><strong>{place.name}</strong></div>
@@ -256,52 +199,31 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         {isLoggedIn ? (
           <div className="review-form">
             <div className="rating-input">
-              Rate this location:{' '}
-              {[1,2,3,4,5].map(star => (
-                <span
-                  key={star}
-                  onClick={() => setRating(star)}
-                  style={{
-                    color: star <= rating ? '#ed0000' : '#ccc',
-                    cursor: 'pointer',
-                    fontSize: '1.5rem'
-                  }}
-                >
-                  ★
-                </span>
+              Rate this location:{" "}
+              {[1, 2, 3, 4, 5].map(star => (
+                <span key={star} onClick={() => setRating(star)} style={{ color: star <= rating ? "#ed0000" : "#ccc", cursor: "pointer", fontSize: "1.5rem" }}>★</span>
               ))}
             </div>
-            <textarea
-              placeholder="Write a review..."
-              value={reviewText}
-              onChange={e => setReviewText(e.target.value)}
-            />
+            <textarea placeholder="Write a review..." value={reviewText} onChange={e => setReviewText(e.target.value)} />
             <button className="submit-review" onClick={handleSubmitReview}>Submit</button>
           </div>
-        ) : (
-          <p className="login-warning">You must be logged in to leave a review.</p>
-        )}
+        ) : <p className="login-warning">You must be logged in to leave a review.</p>}
 
         <div className="reviews-list">
           {place.reviews?.map(review => (
             <div key={review.id} className="review">
               {review.user_id ? (
                 <Link to={`/users/${review.user_id}`} className="review-author-link">
-                  {review.author ?? 'Anonymous'}
+                  {review.author ?? "Anonymous"}
                 </Link>
               ) : (
-                <strong>{review.author ?? 'Anonymous'}</strong>
+                <strong>{review.author ?? "Anonymous"}</strong>
               )}
               <div className="review-stars">{renderStars(Number(review.rating) || 0)}</div>
               <p>{review.text}</p>
               <small>{new Date(review.created_at).toLocaleDateString()}</small> <br />
-              {userRole === 'admin' && (
-                <button
-                  className="delete-review"
-                  onClick={() => handleDeleteReview(review.id)}
-                >
-                  Delete
-                </button>
+              {userRole === "admin" && (
+                <button className="delete-review" onClick={() => handleDeleteReview(review.id)}>Delete</button>
               )}
             </div>
           ))}
