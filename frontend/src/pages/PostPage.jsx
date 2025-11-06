@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { apiGet, apiSend } from "../lib/api";
 
@@ -8,14 +8,15 @@ export default function PostPage() {
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
 
-  const load = () =>
+  const load = useCallback(() => {
     apiGet(`/api/community/${id}`)
       .then((d) => setPost(d))
       .catch((e) => setError(e.message));
+  }, [id]);
 
   useEffect(() => {
     load();
-  }, [id]);
+  }, [load]);
 
   const addComment = async (e) => {
     e.preventDefault();
@@ -47,9 +48,15 @@ export default function PostPage() {
         ))}
       </div>
       <form onSubmit={addComment} className="comment-form">
-        <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Add a comment..." required />
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Add a comment..."
+          required
+        />
         <button type="submit">Comment</button>
       </form>
     </div>
   );
 }
+

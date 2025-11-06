@@ -180,7 +180,10 @@ def create_app():
             return jsonify({"error": "Place not found"}), 404
         reviews = db.execute(
             """
-            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author, u.id AS user_id
+            SELECT r.id, r.rating, r.text, r.created_at,
+                   COALESCE(u.full_name, u.username, 'Anonymous') AS author,
+                   u.full_name,
+                   u.id AS user_id
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.place_id = ?
@@ -242,7 +245,10 @@ def create_app():
         db.commit()
         review = db.execute(
             """
-            SELECT r.id, r.rating, r.text, r.created_at, u.username AS author, u.id AS user_id
+            SELECT r.id, r.rating, r.text, r.created_at,
+                   COALESCE(u.full_name, u.username, 'Anonymous') AS author,
+                   u.full_name,
+                   u.id AS user_id
             FROM reviews r
             JOIN users u ON r.user_id = u.id
             WHERE r.id = ?
@@ -303,6 +309,75 @@ def create_app():
         return jsonify([dict(r) for r in results])
 
     return app
+
+@community_bp.get("")
+def get_posts():
+    db = get_db()
+    posts = db.execute("SELECT * FROM forum_posts ORDER BY created_at DESC").fetchall()
+    return jsonify({"posts": [dict(p) for p in posts]})
+
+@community_bp.post("")
+def create_post():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(force=True) or {}
+    title = data.get("title", "").strip()
+    body = data.get("body", "").strip()
+    category = data.get("category", "").strip()
+    if not title or not body or not category:
+        return jsonify({"error": "All fields are required"}), 400
+    db = get_db()
+    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    post_id = str(uuid.uuid4())
+    db.execute(
+        "INSERT INTO forum_posts (id, category, title, body, username) VALUES (?, ?, ?, ?, ?)",
+        (post_id, category, title, body, user["username"]),
+    )
+    db.commit()
+    new_post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+    return jsonify({"post": dict(new_post)}), 201
+
+@community_bp.get("/<string:post_id>")
+def get_post(post_id):
+    db = get_db()
+    post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+    comments = db.execute(
+        "SELECT * FROM forum_comments WHERE post_id = ? ORDER BY created_at DESC", (post_id,)
+    ).fetchall()
+    return jsonify({**dict(post), "comments": [dict(c) for c in comments]})
+
+@community_bp.post("/<string:post_id>/comments")
+def add_comment(post_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(force=True) or {}
+    body = data.get("body", "").strip()
+    if not body:
+        return jsonify({"error": "Comment cannot be empty"}), 400
+    db = get_db()
+    user = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    db.execute(
+        "INSERT INTO forum_comments (post_id, username, body) VALUES (?, ?, ?)",
+        (post_id, user["username"], body),
+    )
+    db.commit()
+    return jsonify({"message": "Comment added"}), 201
+
+@community_bp.delete("/<string:post_id>")
+@require_admin
+def delete_post(post_id):
+    db = get_db()
+    db.execute("DELETE FROM forum_posts WHERE id = ?", (post_id,))
+    db.commit()
+    return jsonify({"message": "Post deleted"}), 200
 
 app = create_app()
 

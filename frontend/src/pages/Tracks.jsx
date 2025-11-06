@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { FaStar, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import '../styles/Tracks.css';
-import ConfirmModal from '../components/ConfirmModal'; 
-  
+import ConfirmModal from '../components/ConfirmModal';
+
+const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 export default function Tracks() {
   const [tracks, setTracks] = useState([]);
@@ -14,7 +15,7 @@ export default function Tracks() {
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch('/api/user/favorites', { credentials: 'include' });
+      const response = await fetch(`${BASE}/api/user/favorites`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch favorite tracks');
       const data = await response.json();
       setTracks(data);
@@ -32,7 +33,7 @@ export default function Tracks() {
   const handleDeleteConfirm = async () => {
     if (!trackToDelete) return;
     try {
-      const res = await fetch('/api/user/favorites', {
+      const res = await fetch(`${BASE}/api/user/favorites`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -83,7 +84,6 @@ export default function Tracks() {
         </div>
       )}
 
-      
       {showConfirm && (
         <ConfirmModal
           title="Delete Track"
