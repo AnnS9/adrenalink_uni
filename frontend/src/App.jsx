@@ -149,7 +149,6 @@ function AppContent() {
           <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />
           <Route path="/adrenaid" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />} />
           <Route path="/adrenaid/edit" element={isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />} />
-          <Route path="/search" element={<SearchResults />} />
           <Route
             path="/adminpanel"
             element={
