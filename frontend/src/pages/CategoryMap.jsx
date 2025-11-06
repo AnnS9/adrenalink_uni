@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -18,36 +18,37 @@ const customIcon = L.icon({
   popupAnchor: [0, -35],
 });
 
-export default function UkMap() {
-  const { id } = useParams(); 
-  const [places, setPlaces] = useState([]);
+export default function CategoryMap({ places = [] }) {
+  const [map, setMap] = useState(null);
+
+  const validPlaces = (places || []).filter(
+    p => Number.isFinite(p?.latitude) && Number.isFinite(p?.longitude)
+  );
 
   useEffect(() => {
-    fetch(`/api/category/${id}`)
-      .then((res) => res.json())
-      .then((data) => setPlaces(data.places || []))
-      .catch((err) => console.error('Error fetching places:', err));
-  }, [id]);
+    if (!map || validPlaces.length === 0) return;
+    const bounds = L.latLngBounds(validPlaces.map(p => [p.latitude, p.longitude]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }, [map, validPlaces]);
 
   return (
-    <div className="map-container inline">  
+    <div className="map-container" style={{ height: '360px', width: '100%' }}>
       <MapContainer
         center={[54.5, -3]}
         zoom={6}
-        style={{ height: '100%', width: '100%' }} 
+        style={{ height: '100%', width: '100%' }}
+        whenCreated={setMap}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
         />
-        {places.map((place) => (
+        {validPlaces.map(place => (
           <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
             <Popup>
               <strong>{place.name}</strong><br />
               {place.description}<br />
-              <Link to={`/place/${place.id}`} className="popup-link">
-                View Place Details
-              </Link>
+              <Link to={`/place/${place.id}`} className="popup-link">View Place Details</Link>
             </Popup>
           </Marker>
         ))}
