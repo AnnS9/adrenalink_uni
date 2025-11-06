@@ -14,7 +14,6 @@ import ProfilePage from './pages/ProfilePage';
 import EditProfile from './pages/EditProfile';
 import Tracks from './pages/Tracks';
 import Community from './pages/Community';
-import SearchResults from './pages/SearchResults';
 import PublicProfile from './pages/PublicProfile';
 import PublicUserTracks from './pages/PublicUserTracks';
 import PostPage from './pages/PostPage';
