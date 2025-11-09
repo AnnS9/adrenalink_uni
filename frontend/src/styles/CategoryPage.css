@@ -70,8 +70,9 @@
   padding-bottom: 8px;
 }
 .mapbutton{
-order: 1;  
-align-items: center;
+  order: 1;  
+  align-items: center;
+  font-weight: bold; 
   gap: 6px;                    
   align-items: center;
   gap: 6px;
@@ -90,8 +91,9 @@ align-items: center;
 
 .community-button {
   display: inline-flex;
-  order: 2;                        /* right side on second row */
-  margin-left: auto;               /* push to the right edge */
+  order: 2;                        
+  margin-left: auto;  
+  font-weight: bold;             
   display: inline-flex;
   align-items: center;
   gap: 6px;                    

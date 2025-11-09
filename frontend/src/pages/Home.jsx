@@ -35,7 +35,7 @@ export default function Home({ isLoggedIn }) {
   return (
     <div className="homepage">
       <div className="container">
-        <h1>Pick Your Adrenaline</h1>
+        <h1>Discover the thrill near you</h1>
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>
         <div className="grid">
           {categories.map(({ id, name, image }) => (
