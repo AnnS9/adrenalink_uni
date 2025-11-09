@@ -1,42 +1,51 @@
 console.log(" api.js loaded from", import.meta.url || "unknown");
 
-// src/lib/api.js
-const RAW_BASE = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
-const BASE = RAW_BASE.replace(/\/$/, ""); // strip trailing slash
+const RAW_BASE =
+  (process.env.REACT_APP_BACKEND_URL || "").trim() ||
+  window.location.origin;
+
+export const API_BASE = RAW_BASE.replace(/\/$/, ""); // strip trailing slash
 
 function buildUrl(path) {
   const p = path.startsWith("/") ? path : `/${path}`;
-  return `${BASE}${p}`;
+  const url = `${API_BASE}${p}`;
+  console.log("[api] ->", url, "from", path);
+  return url;
 }
 
-async function parseJsonSafe(res) {
+async function parseBody(res) {
   const ct = res.headers.get("content-type") || "";
-  if (!ct.includes("application/json")) return null;
-  const txt = await res.text();
-  if (!txt) return null;
-  try { return JSON.parse(txt); } catch { return null; }
-}
-
-export async function apiGet(path, opts = {}) {
-  const res = await fetch(buildUrl(path), { credentials: "include", ...opts });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || `HTTP ${res.status}`);
+  const text = await res.text();
+  if (!text) return null;
+  if (ct.includes("application/json")) {
+    try { return JSON.parse(text); } catch { return null; }
   }
-  return (await parseJsonSafe(res)) ?? {};
+  return text;
 }
 
-export async function apiSend(path, method = "POST", body = {}, opts = {}) {
+async function request(path, opts = {}) {
   const res = await fetch(buildUrl(path), {
-    method,
-    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
     credentials: "include",
+    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+    ...opts,
+  });
+
+  const body = await parseBody(res);
+
+  if (!res.ok) {
+    const msg =
+      (body && typeof body === "object" && (body.error || body.message)) ||
+      (typeof body === "string" && body) ||
+      `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return body ?? {};
+}
+
+export const apiGet  = (path, opts) => request(path, opts);
+export const apiSend = (path, method = "POST", body = {}, opts = {}) =>
+  request(path, {
+    method,
     body: Object.keys(body || {}).length ? JSON.stringify(body) : undefined,
     ...opts,
   });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(txt || `HTTP ${res.status}`);
-  }
-  return (await parseJsonSafe(res)) ?? {};
-}

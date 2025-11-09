@@ -1,9 +1,9 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import '../styles/CategoryPage.css';
-import CategoryMap from './CategoryMap';
-
-const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { FaStar } from "react-icons/fa";
+import "../styles/CategoryPage.css";
+import CategoryMap from "./CategoryMap";
+import { apiGet } from "../lib/api";
 
 export default function CategoryPage({ isLoggedIn, openAuth }) {
   const { id } = useParams();
@@ -14,33 +14,50 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
   const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     setLoading(true);
     setError(null);
-    fetch(`${BASE}/api/category/${id}`, { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to fetch category ${id}: ${res.statusText}`);
-        return res.json();
+
+    apiGet(`/api/category/${id}`)
+      .then((data) => {
+        if (!alive) return;
+        setCategory(data);
       })
-      .then((data) => setCategory(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (!alive) return;
+        setError(err.message || "Failed to fetch category");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
   const renderStars = (value = 0) =>
-    [...Array(5)].map((_, i) => (
-      <span key={i} className={i < value ? 'filled' : ''}>★</span>
+    [1, 2, 3, 4, 5].map((star) => (
+      <FaStar
+        key={star}
+        color={star <= value ? "#ed0000" : "#ccc"}
+        size={16}
+        style={{ marginRight: 2 }}
+        aria-hidden="true"
+      />
     ));
+
+  const fmt = (n) => (typeof n === "number" ? n.toFixed(1) : "0.0");
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!category) return <div>No category data found.</div>;
 
-
   return (
     <div className="category-page alt-look">
       <header
         className="hero-image hero-alt"
-        style={{ backgroundImage: `url(${category.image || ''})` }}
+        style={{ backgroundImage: `url(${category.image || ""})` }}
       >
         <div className="hero-overlay">
           <h1 className="hero-title big">{category.name?.toUpperCase()}</h1>
@@ -55,7 +72,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
 
           <button
             onClick={() => setShowMap(!showMap)}
-            className={`mapbutton ${showMap ? 'active' : ''}`}
+            className={`mapbutton ${showMap ? "active" : ""}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -72,14 +89,11 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
               <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            {showMap ? 'Hide Map' : 'View Map'}
+            {showMap ? "Hide Map" : "View Map"}
           </button>
 
           {isLoggedIn && (
-            <button
-              onClick={() => navigate('/community')}
-              className="community-button"
-            >
+            <button onClick={() => navigate("/community")} className="community-button">
               Community Hub
             </button>
           )}
@@ -87,11 +101,10 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
 
         {!isLoggedIn && (
           <div className="signin-banner">
-            <p>🔒 Sign in to access the <strong>Community Hub</strong> and share your reviews.</p>
-            <button
-              className="btn-small"
-              onClick={() => openAuth(`/category/${id}`)}
-            >
+            <p>
+              🔒 Sign in to access the <strong>Community Hub</strong> and share your reviews.
+            </p>
+            <button className="btn-small" onClick={() => openAuth(`/category/${id}`)}>
               Sign In
             </button>
           </div>
@@ -107,39 +120,42 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
         )}
 
         <section className="places-grid">
-          {category.places?.map((place, index) => {
-            const rating = Math.round(place.rating || 0);
-            return (
-              <Link
-                to={`/place/${place.id || index}`}
-                key={place.id || index}
-                className="place-card"
-              >
-                <div className="place-image-wrap">
-                  <img
-                    src={place.image || '/images/default.jpg'}
-                    alt={place.name || 'Unknown'}
-                  />
-                  <div className="img-gradient" />
-                  <div className="place-title-onimage">
-                    {place.name || 'Unnamed Place'}
-                  </div>
-                </div>
+          {category.places?.length ? (
+            category.places.map((place, index) => {
+              const pid = place.id ?? index;
+              const rounded = Math.round(place.rating || 0);
 
-                <div className="place-meta">
-                  <p className="place-desc">
-                    {place.description || 'Explore this spot and see what the community says.'}
-                  </p>
-                  <div className="rating-stars">
-                    {renderStars(rating)}
-                    <span className="rating-number">
-                      {` (${place.rating ? place.rating.toFixed(1) : '0.0'})`}
-                    </span>
+              return (
+                <Link to={`/place/${pid}`} key={pid} className="place-card">
+                  <div className="place-image-wrap">
+                    <img
+                      src={place.image || "/images/default.jpg"}
+                      alt={place.name || "Unknown"}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = "/images/default.jpg";
+                      }}
+                    />
+                    <div className="img-gradient" />
+                    <div className="place-title-onimage">{place.name || "Unnamed Place"}</div>
                   </div>
-                </div>
-              </Link>
-            );
-          }) || <p>No places found in this category.</p>}
+
+                  <div className="place-meta">
+                    <p className="place-desc">
+                      {place.description || "Explore this spot and see what the community says."}
+                    </p>
+
+                    <div className="rating-stars">
+                      {renderStars(rounded)}
+                      <span className="rating-number">({fmt(place.rating)})</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <p>No places found in this category.</p>
+          )}
         </section>
       </div>
     </div>
