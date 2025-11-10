@@ -33,7 +33,8 @@ def create_app():
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
-
+ 
+    
     db_env = os.getenv("DATABASE", "")
     default_db = os.path.join(app.instance_path, "data.db")
     db_path = os.path.abspath(db_env if db_env else default_db)
@@ -47,7 +48,9 @@ def create_app():
         SESSION_COOKIE_SECURE=True if is_production else False,
         SESSION_COOKIE_HTTPONLY=True,
     )
-
+    if is_production:
+        allowed_origins.append("https://adrenalink-uni-1.onrender.com")
+    
     CORS(
         app,
         resources={r"/api/*": {"origins": allowed_origins}},
@@ -307,7 +310,36 @@ def create_app():
             (f"%{query}%", f"%{query}%", f"%{query}%"),
         ).fetchall()
         return jsonify([dict(r) for r in results])
+    
+    @app.get("/api/profile/me")
+    def profile_me():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
 
+        db = get_db()
+        user = db.execute(
+            """
+            SELECT id, username, full_name, email, role,
+                profile_picture, location, activities
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        out = dict(user)
+        # normalize activities to string for your current UI
+        if out.get("activities") and isinstance(out["activities"], str):
+            out["activities"] = out["activities"]
+        elif out.get("activities") is None:
+            out["activities"] = ""
+
+        return jsonify(out), 200
+        
     return app
 
 @community_bp.get("")
