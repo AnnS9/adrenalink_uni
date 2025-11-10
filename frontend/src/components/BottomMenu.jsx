@@ -79,7 +79,7 @@ export default function BottomMenu({
               </NavLink>
             )}
 
-            <NavLink to="/profile" className={navLinkClasses} aria-label="My profile">
+            <NavLink to="/adrenaid" className={navLinkClasses} aria-label="My profile">
               <FontAwesomeIcon icon={faIdCard} />
               <span className="label">MY ID</span>
             </NavLink>
