@@ -1,25 +1,32 @@
-import { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useState, useEffect, useCallback } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-import AppLayout from './AppLayout';
-import Home from './pages/Home';
-import CategoryPage from './pages/CategoryPage';
-import PlacePage from './pages/PlacePage';
-import AdminPanel from './pages/AdminPanel';
-import AuthModal from './components/AuthModal';
-import UkMap from './components/UkMap';
-import ProfilePage from './pages/ProfilePage';
-import EditProfile from './pages/EditProfile';
-import Tracks from './pages/Tracks';
-import Community from './pages/Community';
-import PublicProfile from './pages/PublicProfile';
-import PublicUserTracks from './pages/PublicUserTracks';
-import PostPage from './pages/PostPage';
+import AppLayout from "./AppLayout";
+import Home from "./pages/Home";
+import CategoryPage from "./pages/CategoryPage";
+import PlacePage from "./pages/PlacePage";
+import AdminPanel from "./pages/AdminPanel";
+import AuthModal from "./components/AuthModal";
+import UkMap from "./components/UkMap";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfile from "./pages/EditProfile";
+import Tracks from "./pages/Tracks";
+import Community from "./pages/Community";
+import PublicProfile from "./pages/PublicProfile";
+import PublicUserTracks from "./pages/PublicUserTracks";
+import PostPage from "./pages/PostPage";
 
-const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+import { apiGet, apiSend } from "./lib/api";
 
+// -------- Auth hook that avoids redirect flicker and always verifies with backend
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -27,68 +34,80 @@ function useAuth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isMounted = true;
+    let alive = true;
 
-    const storedRole = localStorage.getItem('userRole');
-    if (storedRole) {
-      if (isMounted) {
-        setIsLoggedIn(true);
-        setUserRole(storedRole);
-        setIsAuthLoading(false);
-      }
-      return;
-    }
-
-    const checkAuthStatus = async () => {
+    const bootstrap = async () => {
       try {
-        const res = await fetch(`${BASE}/api/check-auth`, { credentials: 'include' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (isMounted) {
-          setIsLoggedIn(data.logged_in);
-          setUserRole(data.user?.role || null);
-          if (data.user?.role) localStorage.setItem('userRole', data.user.role);
+        // Seed from localStorage to prevent UI flash
+        const storedRole = localStorage.getItem("userRole");
+        if (storedRole) {
+          setIsLoggedIn(true);
+          setUserRole(storedRole);
         }
-      } catch {
-        if (isMounted) {
+
+        // Always verify with backend
+        const data = await apiGet("/api/check-auth");
+        if (!alive) return;
+
+        if (data?.logged_in) {
+          setIsLoggedIn(true);
+          const role = data.user?.role || null;
+          setUserRole(role);
+          if (role) localStorage.setItem("userRole", role);
+        } else {
           setIsLoggedIn(false);
           setUserRole(null);
+          localStorage.removeItem("userRole");
         }
+      } catch {
+        // Keep optimistic state if network fails, but finish loading
       } finally {
-        if (isMounted) setIsAuthLoading(false);
+        if (alive) setIsAuthLoading(false);
       }
     };
 
-    checkAuthStatus();
-    return () => { isMounted = false; };
+    bootstrap();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const handleLogout = useCallback(() => {
-    fetch(`${BASE}/api/logout`, { method: 'POST', credentials: 'include' }).then(() => {
-      setIsLoggedIn(false);
-      setUserRole(null);
-      localStorage.removeItem('userRole');
-      navigate('/');
-    });
+    apiSend("/api/logout", "POST")
+      .catch(() => {})
+      .finally(() => {
+        setIsLoggedIn(false);
+        setUserRole(null);
+        localStorage.removeItem("userRole");
+        navigate("/");
+      });
   }, [navigate]);
 
   const manualLogin = (user) => {
     setIsLoggedIn(true);
     setUserRole(user.role);
-    localStorage.setItem('userRole', user.role);
+    localStorage.setItem("userRole", user.role);
   };
 
   return { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin };
 }
 
-function ProtectedRoute({ isAdmin, isAuthLoading, children }) {
-  if (isAuthLoading) return <div>Authenticating...</div>;
-  if (!isAdmin) return <Navigate to="/" replace />;
+// -------- Route guards
+function RequireLogin({ isAuthLoading, isLoggedIn, children }) {
+  if (isAuthLoading) return <div>Authenticating…</div>;
+  if (!isLoggedIn) return <Navigate to="/" replace />;
+  return children;
+}
+
+function RequireAdmin({ isAuthLoading, userRole, children }) {
+  if (isAuthLoading) return <div>Authenticating…</div>;
+  if (userRole !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
 function AppContent() {
-  const { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin } = useAuth();
+  const { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin } =
+    useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nextPath, setNextPath] = useState(null);
@@ -98,18 +117,19 @@ function AppContent() {
     setNextPath(next || null);
     setIsModalOpen(true);
   };
-
   const closeModal = () => {
     setIsModalOpen(false);
     setNextPath(null);
   };
-
   const handleLoginSuccess = (userData) => {
     manualLogin(userData);
     closeModal();
   };
 
-  if (isAuthLoading) return <div>Loading...</div>;
+  if (isAuthLoading) {
+    // Optional global skeleton while bootstrapping auth
+    return <div>Loading…</div>;
+  }
 
   return (
     <>
@@ -135,30 +155,78 @@ function AppContent() {
           }
         >
           <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
+
           <Route
             path="/category/:id"
             element={
-              <CategoryPage
-                isLoggedIn={isLoggedIn}
-                openAuth={openAuthWithNext}
-              />
+              <CategoryPage isLoggedIn={isLoggedIn} openAuth={openAuthWithNext} />
             }
           />
-          <Route path="/place/:id" element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />} />
+
+          <Route
+            path="/place/:id"
+            element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />}
+          />
+
           <Route path="/map" element={<UkMap />} />
-          <Route path="/tracks" element={isLoggedIn ? <Tracks /> : <Navigate to="/" replace />} />
-          <Route path="/adrenaid" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />} />
-          <Route path="/adrenaid/edit" element={isLoggedIn ? <EditProfile /> : <Navigate to="/" replace />} />
+
+          <Route
+            path="/tracks"
+            element={
+              <RequireLogin
+                isAuthLoading={isAuthLoading}
+                isLoggedIn={isLoggedIn}
+              >
+                <Tracks />
+              </RequireLogin>
+            }
+          />
+
+    
+           <Route
+            path="/adrenaid"
+            element={
+              <RequireLogin
+                isAuthLoading={isAuthLoading}
+                isLoggedIn={isLoggedIn}
+              >
+                <ProfilePage />
+              </RequireLogin>
+            }
+          />
+          <Route
+            path="/adrenaid/edit"
+            element={
+              <RequireLogin
+                isAuthLoading={isAuthLoading}
+                isLoggedIn={isLoggedIn}
+              >
+                <EditProfile />
+              </RequireLogin>
+            }
+          />
+
+         
+          <Route path="/profile" element={<Navigate to="/adrenaid" replace />} />
+
           <Route
             path="/adminpanel"
             element={
-              <ProtectedRoute isAdmin={userRole === 'admin'} isAuthLoading={isAuthLoading}>
+              <RequireAdmin
+                isAuthLoading={isAuthLoading}
+                userRole={userRole}
+              >
                 <AdminPanel />
-              </ProtectedRoute>
+              </RequireAdmin>
             }
           />
-          <Route path="/community" element={<Community isLoggedIn={isLoggedIn} />} />
+
+          <Route
+            path="/community"
+            element={<Community isLoggedIn={isLoggedIn} />}
+          />
           <Route path="/community/:id" element={<PostPage />} />
+
           <Route path="/users/:userId" element={<PublicProfile />} />
           <Route path="/users/:userId/tracks" element={<PublicUserTracks />} />
         </Route>
