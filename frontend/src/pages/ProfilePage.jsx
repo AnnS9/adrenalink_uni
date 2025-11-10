@@ -124,13 +124,7 @@ export default function ProfilePage() {
       <br />
       <br />
 
-      {/* Debug info – remove later */}
-      <details>
-        <summary>Raw profile JSON</summary>
-        <pre style={{ whiteSpace: "pre-wrap" }}>
-          {JSON.stringify(profile, null, 2)}
-        </pre>
-      </details>
+     
     </div>
   );
 }
