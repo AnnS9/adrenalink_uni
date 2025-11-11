@@ -311,34 +311,7 @@ def create_app():
         ).fetchall()
         return jsonify([dict(r) for r in results])
     
-    @app.get("/api/profile/me")
-    def profile_me():
-        user_id = session.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Unauthorized"}), 401
-
-        db = get_db()
-        user = db.execute(
-            """
-            SELECT id, username, full_name, email, role,
-                profile_picture, location, activities
-            FROM users
-            WHERE id = ?
-            """,
-            (user_id,),
-        ).fetchone()
-
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-
-        out = dict(user)
-        # normalize activities to string for your current UI
-        if out.get("activities") and isinstance(out["activities"], str):
-            out["activities"] = out["activities"]
-        elif out.get("activities") is None:
-            out["activities"] = ""
-
-        return jsonify(out), 200
+    
     
 
     @app.route("/api/profile/me", methods=["GET", "PUT", "DELETE"])
@@ -350,30 +323,24 @@ def create_app():
         db = get_db()
 
         if request.method == "GET":
-            try:
-                row = db.execute(
-                    """
-                    SELECT
-                    id,
-                    username,
-                    COALESCE(full_name, '')    AS full_name,
-                    COALESCE(email, '')        AS email,
-                    COALESCE(role, '')         AS role,
-                    COALESCE(profile_picture,'') AS profile_picture,
-                    COALESCE(location, '')     AS location,
-                    COALESCE(activities, '')   AS activities
-                    FROM users
-                    WHERE id = ?
-                    """,
-                    (user_id,),
-                ).fetchone()
-            except Exception as e:
-                current_app.logger.exception("GET /api/profile/me failed")
-                return jsonify({"error": "Server error while reading profile"}), 500
-
+            row = db.execute(
+                """
+                SELECT
+                id,
+                username,
+                COALESCE(full_name,'')       AS full_name,
+                COALESCE(email,'')           AS email,
+                COALESCE(role,'')            AS role,
+                COALESCE(profile_picture,'') AS profile_picture,
+                COALESCE(location,'')        AS location,
+                COALESCE(activities,'')      AS activities
+                FROM users
+                WHERE id = ?
+                """,
+                (user_id,),
+            ).fetchone()
             if not row:
                 return jsonify({"error": "User not found"}), 404
-
             return jsonify(dict(row)), 200
 
         if request.method == "PUT":
@@ -382,7 +349,6 @@ def create_app():
             location = (data.get("location") or "").strip()
             profile_picture = (data.get("profile_picture") or "").strip()
             activities = (data.get("activities") or "").strip()
-
             new_password = (data.get("new_password") or "").strip()
             current_password = (data.get("current_password") or "").strip()
 
@@ -390,12 +356,7 @@ def create_app():
                 row = db.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
                 if not row:
                     return jsonify({"error": "User not found"}), 404
-                try:
-                    ok = check_password_hash(row["password_hash"], current_password)
-                except Exception:
-                    current_app.logger.exception("Password hash check failed")
-                    return jsonify({"error": "Server error"}), 500
-                if not ok:
+                if not check_password_hash(row["password_hash"], current_password):
                     return jsonify({"error": "Current password is incorrect"}), 400
                 new_hash = generate_password_hash(new_password)
                 db.execute(
@@ -419,19 +380,20 @@ def create_app():
             db.commit()
             return jsonify({"message": "updated"}), 200
 
-        if request.method == "DELETE":
-            username_row = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
-            username = username_row["username"] if username_row else None
+        # DELETE
+        username_row = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+        username = username_row["username"] if username_row else None
 
-            db.execute("DELETE FROM user_favorites WHERE user_id = ?", (user_id,))
-            db.execute("DELETE FROM reviews WHERE user_id = ?", (user_id,))
-            if username:
-                db.execute("DELETE FROM forum_comments WHERE username = ?", (username,))
-                db.execute("DELETE FROM forum_posts WHERE username = ?", (username,))
-            db.execute("DELETE FROM users WHERE id = ?", (user_id,))
-            db.commit()
-            session.clear()
-            return jsonify({"message": "account deleted"}), 200
+        db.execute("DELETE FROM user_favorites WHERE user_id = ?", (user_id,))
+        db.execute("DELETE FROM reviews WHERE user_id = ?", (user_id,))
+        if username:
+            db.execute("DELETE FROM forum_comments WHERE username = ?", (username,))
+            db.execute("DELETE FROM forum_posts WHERE username = ?", (username,))
+        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        db.commit()
+        session.clear()
+        return jsonify({"message": "account deleted"}), 200
+
 
     return app
 
