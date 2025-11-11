@@ -226,10 +226,9 @@
   font-weight: 700;
   font-size: 20px;
   color: #fff;
-  
   padding: 6px 10px;
   border-radius: 8px;
-  backdrop-filter: blur(3px);
+  
 }
 
 .place-meta {
