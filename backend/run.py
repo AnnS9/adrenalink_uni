@@ -33,9 +33,8 @@ def create_app():
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
-    if is_production:
-        allowed_origins.append("https://adrenalink-uni-1.onrender.com")
-
+ 
+    
     db_env = os.getenv("DATABASE", "")
     default_db = os.path.join(app.instance_path, "data.db")
     db_path = os.path.abspath(db_env if db_env else default_db)
@@ -49,7 +48,9 @@ def create_app():
         SESSION_COOKIE_SECURE=True if is_production else False,
         SESSION_COOKIE_HTTPONLY=True,
     )
-
+    if is_production:
+        allowed_origins.append("https://adrenalink-uni-1.onrender.com")
+    
     CORS(
         app,
         resources={r"/api/*": {"origins": allowed_origins}},
@@ -309,6 +310,36 @@ def create_app():
             (f"%{query}%", f"%{query}%", f"%{query}%"),
         ).fetchall()
         return jsonify([dict(r) for r in results])
+    
+    @app.get("/api/profile/me")
+    def profile_me():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        db = get_db()
+        user = db.execute(
+            """
+            SELECT id, username, full_name, email, role,
+                profile_picture, location, activities
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        out = dict(user)
+        # normalize activities to string for your current UI
+        if out.get("activities") and isinstance(out["activities"], str):
+            out["activities"] = out["activities"]
+        elif out.get("activities") is None:
+            out["activities"] = ""
+
+        return jsonify(out), 200
+    
 
     @app.route("/api/profile/me", methods=["GET", "PUT", "DELETE"])
     def profile_me():
@@ -319,22 +350,31 @@ def create_app():
         db = get_db()
 
         if request.method == "GET":
-            user = db.execute(
-                """
-                SELECT id, username, full_name, email, role,
-                       profile_picture, location, activities, password_hash
-                FROM users
-                WHERE id = ?
-                """,
-                (user_id,),
-            ).fetchone()
-            if not user:
+            try:
+                row = db.execute(
+                    """
+                    SELECT
+                    id,
+                    username,
+                    COALESCE(full_name, '')    AS full_name,
+                    COALESCE(email, '')        AS email,
+                    COALESCE(role, '')         AS role,
+                    COALESCE(profile_picture,'') AS profile_picture,
+                    COALESCE(location, '')     AS location,
+                    COALESCE(activities, '')   AS activities
+                    FROM users
+                    WHERE id = ?
+                    """,
+                    (user_id,),
+                ).fetchone()
+            except Exception as e:
+                current_app.logger.exception("GET /api/profile/me failed")
+                return jsonify({"error": "Server error while reading profile"}), 500
+
+            if not row:
                 return jsonify({"error": "User not found"}), 404
-            data = dict(user)
-            data.pop("password_hash", None)
-            if data.get("activities") is None:
-                data["activities"] = ""
-            return jsonify(data), 200
+
+            return jsonify(dict(row)), 200
 
         if request.method == "PUT":
             data = request.get_json(force=True) or {}
@@ -347,18 +387,22 @@ def create_app():
             current_password = (data.get("current_password") or "").strip()
 
             if new_password:
-                row = db.execute(
-                    "SELECT password_hash FROM users WHERE id = ?",
-                    (user_id,),
-                ).fetchone()
-                if not row or not check_password_hash(row["password_hash"], current_password):
+                row = db.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+                if not row:
+                    return jsonify({"error": "User not found"}), 404
+                try:
+                    ok = check_password_hash(row["password_hash"], current_password)
+                except Exception:
+                    current_app.logger.exception("Password hash check failed")
+                    return jsonify({"error": "Server error"}), 500
+                if not ok:
                     return jsonify({"error": "Current password is incorrect"}), 400
                 new_hash = generate_password_hash(new_password)
                 db.execute(
                     """
                     UPDATE users
-                       SET full_name = ?, location = ?, profile_picture = ?, activities = ?, password_hash = ?
-                     WHERE id = ?
+                    SET full_name = ?, location = ?, profile_picture = ?, activities = ?, password_hash = ?
+                    WHERE id = ?
                     """,
                     (full_name, location, profile_picture, activities, new_hash, user_id),
                 )
@@ -366,8 +410,8 @@ def create_app():
                 db.execute(
                     """
                     UPDATE users
-                       SET full_name = ?, location = ?, profile_picture = ?, activities = ?
-                     WHERE id = ?
+                    SET full_name = ?, location = ?, profile_picture = ?, activities = ?
+                    WHERE id = ?
                     """,
                     (full_name, location, profile_picture, activities, user_id),
                 )
@@ -376,9 +420,7 @@ def create_app():
             return jsonify({"message": "updated"}), 200
 
         if request.method == "DELETE":
-            username_row = db.execute(
-                "SELECT username FROM users WHERE id = ?", (user_id,)
-            ).fetchone()
+            username_row = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
             username = username_row["username"] if username_row else None
 
             db.execute("DELETE FROM user_favorites WHERE user_id = ?", (user_id,))
