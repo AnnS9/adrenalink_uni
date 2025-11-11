@@ -80,7 +80,7 @@ export default function ProfilePage() {
     <div className="profile-page">
       <div className="profile-header">
         <img
-          src={profile.profile_picture || "/images/default_avatar.jpeg"}
+          src={profile.profile_picture || "/images/default_avatar.png"}
           alt="Avatar"
           className="avatar"
         />
