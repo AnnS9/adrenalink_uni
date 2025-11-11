@@ -14,7 +14,11 @@ export default function Footer() {
           <p className="tagline">Find your next rush</p>
         </div>
 
-        
+        <nav className="footer-nav" aria-label="Primary footer">
+          <Link to="/">Home</Link>
+          <Link to="/map">Map</Link>
+          <Link to="/community">Community</Link>
+        </nav>
 
         <nav className="footer-legal" aria-label="Legal">
           <Link to="/privacy">Privacy</Link>
