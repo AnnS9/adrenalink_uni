@@ -8,7 +8,8 @@ import {
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import RouteLoader from "./components/RouteLoader";
+import Loader from "./components/Loading";
 import AppLayout from "./AppLayout";
 import Home from "./pages/Home";
 import CategoryPage from "./pages/CategoryPage";
@@ -26,7 +27,6 @@ import PostPage from "./pages/PostPage";
 
 import { apiGet, apiSend } from "./lib/api";
 
-// -------- Auth hook that avoids redirect flicker and always verifies with backend
 function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -38,14 +38,14 @@ function useAuth() {
 
     const bootstrap = async () => {
       try {
-        // Seed from localStorage to prevent UI flash
+       
         const storedRole = localStorage.getItem("userRole");
         if (storedRole) {
           setIsLoggedIn(true);
           setUserRole(storedRole);
         }
 
-        // Always verify with backend
+       
         const data = await apiGet("/api/check-auth");
         if (!alive) return;
 
@@ -60,7 +60,7 @@ function useAuth() {
           localStorage.removeItem("userRole");
         }
       } catch {
-        // Keep optimistic state if network fails, but finish loading
+        
       } finally {
         if (alive) setIsAuthLoading(false);
       }
@@ -92,15 +92,14 @@ function useAuth() {
   return { isLoggedIn, userRole, isAuthLoading, handleLogout, manualLogin };
 }
 
-// -------- Route guards
 function RequireLogin({ isAuthLoading, isLoggedIn, children }) {
-  if (isAuthLoading) return <div>Authenticating…</div>;
+  if (isAuthLoading) return <Loader />;
   if (!isLoggedIn) return <Navigate to="/" replace />;
   return children;
 }
 
 function RequireAdmin({ isAuthLoading, userRole, children }) {
-  if (isAuthLoading) return <div>Authenticating…</div>;
+  if (isAuthLoading) return <Loader />;
   if (userRole !== "admin") return <Navigate to="/" replace />;
   return children;
 }
@@ -126,9 +125,9 @@ function AppContent() {
     closeModal();
   };
 
+ 
   if (isAuthLoading) {
-    // Optional global skeleton while bootstrapping auth
-    return <div>Loading…</div>;
+    return <Loader />;
   }
 
   return (
@@ -159,13 +158,18 @@ function AppContent() {
           <Route
             path="/category/:id"
             element={
-              <CategoryPage isLoggedIn={isLoggedIn} openAuth={openAuthWithNext} />
+              <CategoryPage
+                isLoggedIn={isLoggedIn}
+                openAuth={openAuthWithNext}
+              />
             }
           />
 
           <Route
             path="/place/:id"
-            element={<PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />}
+            element={
+              <PlacePage isLoggedIn={isLoggedIn} userRole={userRole} />
+            }
           />
 
           <Route path="/map" element={<UkMap />} />
@@ -182,8 +186,7 @@ function AppContent() {
             }
           />
 
-    
-           <Route
+          <Route
             path="/adrenaid"
             element={
               <RequireLogin
@@ -206,7 +209,6 @@ function AppContent() {
             }
           />
 
-         
           <Route path="/profile" element={<Navigate to="/adrenaid" replace />} />
 
           <Route
@@ -228,7 +230,10 @@ function AppContent() {
           <Route path="/community/:id" element={<PostPage />} />
 
           <Route path="/users/:userId" element={<PublicProfile />} />
-          <Route path="/users/:userId/tracks" element={<PublicUserTracks />} />
+          <Route
+            path="/users/:userId/tracks"
+            element={<PublicUserTracks />}
+          />
         </Route>
       </Routes>
 
@@ -245,6 +250,8 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
+     
+      <RouteLoader />
       <AppContent />
     </Router>
   );
