@@ -30,7 +30,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const [categoryId, setCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState(null);
 
-  // Fetch place details
+
   useEffect(() => {
     let alive = true;
     apiGet(`/api/place/${id}`)
@@ -47,7 +47,20 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     };
   }, [id]);
 
-  // Fetch category name if needed
+useEffect(() => {
+    fetch(`/api/place/${id}`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setPlace({ ...data, reviews: data.reviews || [] });
+        if (data.is_favorited) setIsFavorited(true);
+
+        if (data.category_id) setCategoryId(data.category_id);
+        if (data.category_name) setCategoryName(data.category_name);
+      })
+      .catch(err => console.error('Failed to fetch place:', err));
+  }, [id]); 
+  
+  
   useEffect(() => {
     if (categoryId && !categoryName) {
       apiGet(`/api/category/${categoryId}`)
@@ -58,7 +71,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   }, [categoryId, categoryName]);
 
-  // Add to favorites
+ 
   const handleAddToTrack = async () => {
     if (!isLoggedIn) {
       toast.info("You must be logged in to add to track.");
@@ -73,7 +86,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   };
 
-  // Submit a review
+
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {
       toast.info("You must be logged in to leave a review.");
@@ -119,7 +132,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   };
 
-  // Delete a review
+  
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm("Delete this review?")) return;
     try {
@@ -141,7 +154,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     }
   };
 
-  // Stars identical to PlacePage
+ 
   const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar

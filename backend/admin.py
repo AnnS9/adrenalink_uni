@@ -7,14 +7,11 @@ from werkzeug.security import generate_password_hash
 
 from db import get_db
 
-# -----------------------------------------------------------------------------
 # Blueprint
-# -----------------------------------------------------------------------------
+
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
+
 
 def admin_required(f):
     """Decorator that ensures the requester has an admin role."""
@@ -38,9 +35,9 @@ def _validate_fields(data: Dict[str, Any], required: List[str]) -> Tuple[bool, L
     return (len(missing) == 0, missing)
 
 
-# -----------------------------------------------------------------------------
+
 # READ (GET)
-# -----------------------------------------------------------------------------
+
 @admin_bp.route("/users", methods=["GET"])
 @admin_required
 def get_users():

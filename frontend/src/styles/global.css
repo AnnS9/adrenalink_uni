@@ -104,7 +104,7 @@ body, html, #root {
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-/* Desktop refinements */
+
 @media (min-width: 720px) {
   .container {
     max-width: 1200px;

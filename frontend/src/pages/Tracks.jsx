@@ -16,7 +16,7 @@ export default function Tracks() {
     setLoading(true);
     setError("");
     try {
-      // Supports array or wrapped payloads like { favorites: [...] }
+
       const data = await apiGet("/api/user/favorites");
       const rows = Array.isArray(data) ? data : data?.favorites || [];
       setTracks(rows);
@@ -37,7 +37,7 @@ export default function Tracks() {
       const placeId = trackToDelete.id || trackToDelete.place_id || trackToDelete._id;
       if (!placeId) throw new Error("Missing place id");
 
-      // Optimistic UI update
+   
       setTracks((prev) => prev.filter((t) => (t.id || t._id) !== placeId));
 
       await apiSend("/api/user/favorites", "DELETE", { placeId });
@@ -45,7 +45,7 @@ export default function Tracks() {
       setTrackToDelete(null);
       setShowConfirm(false);
     } catch (e) {
-      // Roll back list on failure by reloading
+      
       await load();
       alert(e.message || "Failed to remove track");
     }

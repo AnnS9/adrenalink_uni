@@ -4,7 +4,7 @@ const RAW_BASE =
   (process.env.REACT_APP_BACKEND_URL || "").trim() ||
   window.location.origin;
 
-export const API_BASE = RAW_BASE.replace(/\/$/, ""); // strip trailing slash
+export const API_BASE = RAW_BASE.replace(/\/$/, ""); 
 
 function buildUrl(path) {
   const p = path.startsWith("/") ? path : `/${path}`;

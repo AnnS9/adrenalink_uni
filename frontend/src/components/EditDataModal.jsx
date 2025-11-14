@@ -31,10 +31,10 @@ function EditDataModal({ isOpen, onClose, activeTab, itemToEdit, onSuccess }) {
 
       setSubmitting(true);
 
-      // Ensure the path has a single leading slash
+     
       const path = `/api/admin/${activeTab}/${id}`;
 
-      // apiSend handles JSON vs text errors safely
+     
       await apiSend(path, "PUT", formData);
 
       setSubmitting(false);

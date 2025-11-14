@@ -1,0 +1,12 @@
+.env
+.env.*
+*.env
+node_modules/
+build/
+__pycache__/
+*.pyc
+*.log
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

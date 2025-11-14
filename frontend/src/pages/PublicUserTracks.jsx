@@ -15,18 +15,18 @@ export default function PublicUserTracks() {
     setLoading(true);
     setError("");
 
-    // Handle missing param early
+    
     if (!userId) {
       setError("Missing user id");
       setLoading(false);
       return;
     }
 
-    // Build once with a leading slash. api.js will normalize it.
+   
     apiGet(`/api/users/${userId}/favorites`)
       .then((data) => {
         if (!alive) return;
-        // Support either an array or a wrapper like { favorites: [...] }
+    
         const list = Array.isArray(data) ? data : data?.favorites || [];
         setTracks(list);
       })

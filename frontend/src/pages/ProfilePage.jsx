@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiGet } from "../lib/api"; // use your central API helper
+import { apiGet } from "../lib/api"; 
 import "../styles/Profile.css";
 
 const AVAILABLE_ACTIVITIES = [
@@ -35,7 +35,7 @@ export default function ProfilePage() {
     setLoading(true);
     setError("");
 
-    // ✅ Call the real API endpoint
+
     apiGet("/api/profile/me")
       .then((data) => {
         if (!alive) return;
@@ -44,7 +44,7 @@ export default function ProfilePage() {
           navigate("/");
           return;
         }
-        // Handle either direct user or wrapped {user: {...}}
+       
         const user = data?.user || data;
         setProfile(user);
       })

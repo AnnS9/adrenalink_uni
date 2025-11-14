@@ -241,7 +241,6 @@ textarea:focus { border-color: var(--brand); outline: none; }
 }
 .breadcrumbs a:hover { color: var(--brand); text-decoration: underline; }
 
-/* Responsive */
 @media (min-width: 768px) {
   .place-page { padding: 2rem 4rem; }
   .place-details, .reviews-section { padding: 1.5rem; }

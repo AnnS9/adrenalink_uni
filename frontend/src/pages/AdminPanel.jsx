@@ -17,9 +17,9 @@ function AdminPanel() {
     setLoading(true);
     setError(null);
     try {
-      // Always use a leading slash so api.js builds a correct absolute URL
+      
       const result = await apiGet(`/api/admin/${activeTab}`);
-      // Some backends wrap in {items: [...]}. Cope with both.
+      
       const rows = Array.isArray(result) ? result : result?.items || [];
       setData(rows);
     } catch (err) {
