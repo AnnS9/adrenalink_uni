@@ -262,13 +262,13 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                 <button
                   className="track-icon"
                   onClick={handleAddToTrack}
-                  title={isFavorited ? "Already in Track" : "Add to Tracks"}
+                  title={isFavorited ? "In Tracks" : "Add to Tracks"}
                   disabled={isFavorited}
                 >
                   <FaPlus color={isFavorited ? "yellow" : "white"} />
                 </button>
                 <div className="track-label">
-                  {isFavorited ? "In Track" : "Add Track"}
+                  {isFavorited ? "In Tracks" : "Add Track"}
                 </div>
               </div>
             )}
@@ -337,7 +337,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
               ))}
             </div>
             <textarea
-              placeholder="Write a review..."
+              
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
             />
@@ -359,11 +359,11 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                   to={`/users/${review.user_id}`}
                   className="review-author-link"
                 >
-                  {review.full_name || review.author || "Anonymous"}
+                  
                 </Link>
               ) : (
                 <strong>
-                  {review.full_name || review.author || "Anonymous"}
+                 
                 </strong>
               )}
               <div className="review-stars">

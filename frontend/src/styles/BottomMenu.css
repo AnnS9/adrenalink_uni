@@ -1,10 +1,3 @@
-:root {
-  --brand: #ed0000;
-  --text: #fff;
-  --nav-bg: rgba(17, 17, 17, 0.94);
-  --bottom-menu-height: 60px;
-}
-
 .bottom-menu {
   position: fixed;
   z-index: 1000;
@@ -13,13 +6,13 @@
   bottom: 0;
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: space-between;
   gap: 4px;
-  height: var(--bottom-menu-height);
+  height: 60px;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-  background-color: var(--nav-bg);
+  background-color: rgba(17, 17, 17, 0.94);
   box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
-  color: var(--text);
+  color: #fff;
   font-weight: 600;
   overflow: visible;
   opacity: 1;
@@ -27,10 +20,33 @@
   transform: translateY(0);
 }
 
-main, .page-container, .app-shell main {
-  padding-bottom: calc(var(--bottom-menu-height) + env(safe-area-inset-bottom, 0px));
+main,
+.page-container,
+.app-shell main {
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Container for mobile links */
+.bottom-menu-links {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 4px;
+}
+
+.bottom-menu-links.open {
+  display: flex;
+}
+
+/* Auth buttons */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Main nav item */
 .nav-item {
   display: inline-flex;
   flex-direction: column;
@@ -51,11 +67,46 @@ main, .page-container, .app-shell main {
   border-radius: 8px;
   flex-shrink: 0;
 }
-.nav-item .label { line-height: 1; }
-.nav-item svg { width: 22px; height: 22px; }
 
-.desktop-logo-link { display: none; }
+.nav-item .label {
+  line-height: 1;
+}
 
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Hamburger toggle */
+.hamburger-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1.3rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.hamburger-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  transform: scale(1.03);
+}
+
+.hamburger-toggle:active {
+  transform: scale(0.97);
+}
+
+/* Desktop logo */
+.desktop-logo-link {
+  display: none;
+}
+
+/* Desktop view */
 @media (min-width: 768px) {
   .bottom-menu {
     top: 0;
@@ -64,7 +115,7 @@ main, .page-container, .app-shell main {
     padding: 0 28px;
     justify-content: flex-end;
     gap: 8px;
-    background-color: var(--nav-bg);
+    background-color: rgba(17, 17, 17, 0.94);
     border-bottom: 1px solid rgba(255,255,255,0.1);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   }
@@ -75,7 +126,22 @@ main, .page-container, .app-shell main {
     align-items: center;
     height: 100%;
   }
-  .desktop-logo { height: 22px; display: block; }
+
+  .desktop-logo {
+    height: 22px;
+    display: block;
+  }
+
+  .bottom-menu-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: static;
+  }
+
+  .hamburger-toggle {
+    display: none;
+  }
 
   .nav-item {
     flex-direction: row;
@@ -86,8 +152,12 @@ main, .page-container, .app-shell main {
     height: auto;
     min-width: auto;
   }
-  .nav-item svg { display: none; }
 
+  .nav-item svg {
+    display: none;
+  }
+
+  /* Underline animation */
   .nav-item.is-link::after {
     content: '';
     position: absolute;
@@ -101,16 +171,57 @@ main, .page-container, .app-shell main {
     transform-origin: center;
     transition: transform .2s ease, background-color .2s ease;
   }
+
   .nav-item.is-link:hover::after,
   .nav-item.is-link.active::after {
-    background-color: var(--brand);
+    background-color: #ed0000;
     transform: scaleX(1);
   }
-  .nav-item.is-button:hover { background-color: rgba(255,255,255,0.07); }
-  .app-layout > main { padding-top: 64px; }
+
+  .nav-item.is-button:hover {
+    background-color: rgba(255,255,255,0.07);
+  }
+
+  .app-layout > main {
+    padding-top: 64px;
+  }
+
+  /* No extra bottom padding on desktop */
+  main,
+  .page-container,
+  .app-shell main {
+    padding-bottom: 0;
+  }
 }
 
+/* Mobile view */
 @media (max-width: 767.98px) {
-  .nav-item .label { display: none; }
-  .nav-item svg { width: 24px; height: 24px; }
+  .bottom-menu {
+    justify-content: space-between;
+  }
+
+  .bottom-menu-links {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    background-color: rgba(17, 17, 17, 0.94);
+    padding: 8px 10px 10px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .auth-buttons {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .nav-item .label {
+    display: none;
+  }
+
+  .nav-item svg {
+    width: 24px;
+    height: 24px;
+  }
 }
