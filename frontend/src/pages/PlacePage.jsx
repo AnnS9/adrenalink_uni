@@ -18,10 +18,21 @@ const customMarkerIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// same pattern as your map page
+const gmapsViewUrl = (lat, lng) =>
+  `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+const gmapsDirectionsUrl = (lat, lng) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
 export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
   const { id } = useParams();
 
-  const [place, setPlace] = useState({ reviews: [], latitude: null, longitude: null });
+  const [place, setPlace] = useState({
+    reviews: [],
+    latitude: null,
+    longitude: null,
+  });
   const [showMap, setShowMap] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
@@ -29,7 +40,6 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
 
   const [categoryId, setCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState(null);
-
 
   useEffect(() => {
     let alive = true;
@@ -47,20 +57,19 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
     };
   }, [id]);
 
-useEffect(() => {
-    fetch(`/api/place/${id}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
+  useEffect(() => {
+    fetch(`/api/place/${id}`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
         setPlace({ ...data, reviews: data.reviews || [] });
         if (data.is_favorited) setIsFavorited(true);
 
         if (data.category_id) setCategoryId(data.category_id);
         if (data.category_name) setCategoryName(data.category_name);
       })
-      .catch(err => console.error('Failed to fetch place:', err));
-  }, [id]); 
-  
-  
+      .catch((err) => console.error("Failed to fetch place:", err));
+  }, [id]);
+
   useEffect(() => {
     if (categoryId && !categoryName) {
       apiGet(`/api/category/${categoryId}`)
@@ -71,7 +80,6 @@ useEffect(() => {
     }
   }, [categoryId, categoryName]);
 
- 
   const handleAddToTrack = async () => {
     if (!isLoggedIn) {
       toast.info("You must be logged in to add to track.");
@@ -85,7 +93,6 @@ useEffect(() => {
       toast.error(e.message);
     }
   };
-
 
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {
@@ -132,7 +139,6 @@ useEffect(() => {
     }
   };
 
-  
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm("Delete this review?")) return;
     try {
@@ -154,7 +160,6 @@ useEffect(() => {
     }
   };
 
- 
   const renderStars = (value) =>
     [...Array(5)].map((_, i) => (
       <FaStar
@@ -207,14 +212,52 @@ useEffect(() => {
                 {showMap ? "Hide Map" : "View Map"}
               </div>
             </div>
+
+            {/* GOOGLE MAPS BUTTONS */}
+            {place.latitude && place.longitude && (
+              <>
+                <div className="map-button-item">
+                  <button
+                    className="map-toggle-icon"
+                    onClick={() =>
+                      window.open(
+                        gmapsViewUrl(place.latitude, place.longitude),
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
+                    title="View in Google Maps"
+                  >
+                    GM
+                  </button>
+                  <div className="map-toggle-label">Google Maps</div>
+                </div>
+
+                <div className="map-button-item">
+                  <button
+                    className="map-toggle-icon"
+                    onClick={() =>
+                      window.open(
+                        gmapsDirectionsUrl(place.latitude, place.longitude),
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
+                    title="Get directions"
+                  >
+                    ➜
+                  </button>
+                  <div className="map-toggle-label">Directions</div>
+                </div>
+              </>
+            )}
+
             {isLoggedIn && (
               <div className="track-button-item">
                 <button
                   className="track-icon"
                   onClick={handleAddToTrack}
-                  title={
-                    isFavorited ? "Already in Track" : "Add to Tracks"
-                  }
+                  title={isFavorited ? "Already in Track" : "Add to Tracks"}
                   disabled={isFavorited}
                 >
                   <FaPlus color={isFavorited ? "yellow" : "white"} />
@@ -293,10 +336,7 @@ useEffect(() => {
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
             />
-            <button
-              className="submit-review"
-              onClick={handleSubmitReview}
-            >
+            <button className="submit-review" onClick={handleSubmitReview}>
               Submit
             </button>
           </div>
@@ -327,7 +367,7 @@ useEffect(() => {
               <p>{review.text}</p>
               <small>
                 {new Date(review.created_at).toLocaleDateString()}
-              </small>{" "}
+              </small>
               <br />
               {userRole === "admin" && (
                 <button
@@ -344,3 +384,4 @@ useEffect(() => {
     </div>
   );
 }
+
