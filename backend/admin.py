@@ -1,10 +1,8 @@
 import sqlite3
 from functools import wraps
 from typing import List, Tuple, Dict, Any
-
 from flask import Blueprint, jsonify, request, session, abort
 from werkzeug.security import generate_password_hash
-
 from db import get_db
 
 # Blueprint

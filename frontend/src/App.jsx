@@ -9,7 +9,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import RouteLoader from "./components/RouteLoader";
-import Loader from "./components/Loading";
+import Loader from "./components/Loader";
 import AppLayout from "./AppLayout";
 import Home from "./pages/Home";
 import CategoryPage from "./pages/CategoryPage";
