@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "leaflet/dist/leaflet.css";
 import "../styles/PlacePage.css";
 import { apiGet, apiSend } from "../lib/api";
+import { FaLocationArrow } from "react-icons/fa";
 
 const customMarkerIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -213,7 +214,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
               </div>
             </div>
 
-            {/* GOOGLE MAPS BUTTONS */}
+            {/* Google maps buttons */}
             {place.latitude && place.longitude && (
               <>
                 <div className="map-button-item">
@@ -228,7 +229,11 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                     }
                     title="View in Google Maps"
                   >
-                    GM
+                     <img
+                      src="/images/map-icon.png"
+                      alt="Google Maps"
+                      style={{ width: 22, height: 22 }}
+                    />
                   </button>
                   <div className="map-toggle-label">Google Maps</div>
                 </div>
@@ -245,7 +250,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                     }
                     title="Get directions"
                   >
-                    ➜
+                     <FaLocationArrow size={20} color="white" />
                   </button>
                   <div className="map-toggle-label">Directions</div>
                 </div>
