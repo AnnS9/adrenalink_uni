@@ -16,7 +16,6 @@ export default function Home({ isLoggedIn }) {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  // Fetch categories
   useEffect(() => {
     let cancelled = false;
     setIsLoadingCategories(true);
@@ -49,7 +48,6 @@ export default function Home({ isLoggedIn }) {
     };
   }, []);
 
-  // Rotating promo text
   useEffect(() => {
     const interval = setInterval(() => {
       setPromoIndex((prev) => (prev + 1) % PROMO_TEXTS.length);
@@ -63,16 +61,19 @@ export default function Home({ isLoggedIn }) {
         <h1>Discover the thrill near you</h1>
         <p className="promo-text">{PROMO_TEXTS[promoIndex]}</p>
 
+       
+        <div className="home-map-button-wrapper">
+          <Link to="/map" className="home-map-button">
+            Explore the UK Adventure Map
+          </Link>
+        </div>
+
         {isLoadingCategories && (
-          <div className="home-loading">
-            Loading spots for you...
-          </div>
+          <div className="home-loading">Loading spots for you...</div>
         )}
 
         {loadError && !isLoadingCategories && (
-          <div className="home-error">
-            {loadError}
-          </div>
+          <div className="home-error">{loadError}</div>
         )}
 
         {!isLoadingCategories && !loadError && (
@@ -80,11 +81,7 @@ export default function Home({ isLoggedIn }) {
             {categories.map(({ id, name, image }) => (
               <Link to={`/category/${id}`} key={id}>
                 <div className="tile">
-                  <img
-                    src={image}
-                    alt={name}
-                    loading="lazy"
-                  />
+                  <img src={image} alt={name} loading="lazy" />
                   <div className="overlay" />
                   <div className="textOverlay">
                     <span className="textInner">{name.toUpperCase()}</span>

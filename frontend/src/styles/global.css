@@ -447,3 +447,22 @@ h1 {
   color: #ff4d4f;
   font-size: 0.95rem;
 }
+.home-map-button-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0 2rem 0;
+}
+
+.home-map-button {
+  background: #ed0000;
+  color: white;
+  padding: 0.9rem 1.8rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.home-map-button:hover {
+  background: #b80000;
+}
