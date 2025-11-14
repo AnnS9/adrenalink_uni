@@ -18,6 +18,8 @@ const customIcon = L.icon({
   popupAnchor: [0, -35],
 });
 
+// use same pattern as in Home.jsx
+const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
 const gmapsViewUrl = (lat, lng) =>
   `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -29,14 +31,26 @@ export default function UkMap() {
   const [places, setPlaces] = useState([]);
 
   useEffect(() => {
-    fetch('/api/places')
-      .then((res) => res.json())
-      .then((data) => setPlaces(data))
+    fetch(`${BASE}/api/places`, { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log('PLACES FROM API:', data);
+        setPlaces(data);
+      })
       .catch((err) => console.error('Error fetching places:', err));
   }, []);
 
   return (
-    <MapContainer center={[54.5, -3]} zoom={6} style={{ height: '100%', width: '100%' }}>
+    <MapContainer
+      center={[54.5, -3]}
+      zoom={6}
+      style={{ height: '80vh', width: '100%' }}
+    >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
@@ -47,11 +61,15 @@ export default function UkMap() {
         const lat = Number(latitude);
         const lng = Number(longitude);
 
+        if (isNaN(lat) || isNaN(lng)) return null;
+
         return (
           <Marker key={id} position={[lat, lng]} icon={customIcon}>
             <Popup>
-              <strong>{name}</strong><br />
-              {description}<br />
+              <strong>{name}</strong>
+              <br />
+              {description}
+              <br />
 
               <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
                 <Link to={`/place/${id}`}>View Place Details</Link>
@@ -79,4 +97,3 @@ export default function UkMap() {
     </MapContainer>
   );
 }
-

@@ -1,128 +1,99 @@
-import { useEffect, useState, useCallback } from "react";
-import { FaStar, FaTrash } from "react-icons/fa";
-import { Link } from "react-router-dom";
-import "../styles/Tracks.css";
-import ConfirmModal from "../components/ConfirmModal";
-import { apiGet, apiSend } from "../lib/api";
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Link } from 'react-router-dom';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-export default function Tracks() {
-  const [tracks, setTracks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [trackToDelete, setTrackToDelete] = useState(null);
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
+const customIcon = L.icon({
+  iconUrl: '/images/icon-map.png',
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
+  popupAnchor: [0, -35],
+});
 
-      const data = await apiGet("/api/user/favorites");
-      const rows = Array.isArray(data) ? data : data?.favorites || [];
-      setTracks(rows);
-    } catch (e) {
-      setError(e.message || "Failed to fetch favorite tracks");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+
+const BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+const gmapsViewUrl = (lat, lng) =>
+  `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+const gmapsDirectionsUrl = (lat, lng) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+export default function UkMap() {
+  const [places, setPlaces] = useState([]);
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleDeleteConfirm = async () => {
-    if (!trackToDelete) return;
-    try {
-      const placeId = trackToDelete.id || trackToDelete.place_id || trackToDelete._id;
-      if (!placeId) throw new Error("Missing place id");
-
-   
-      setTracks((prev) => prev.filter((t) => (t.id || t._id) !== placeId));
-
-      await apiSend("/api/user/favorites", "DELETE", { placeId });
-
-      setTrackToDelete(null);
-      setShowConfirm(false);
-    } catch (e) {
-      
-      await load();
-      alert(e.message || "Failed to remove track");
-    }
-  };
-
-  if (loading) return <div className="loading">Loading favorite tracks...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-
-  const safeImg = (src) =>
-    src && typeof src === "string" ? src : "/images/placeholder.jpg";
-
-  const fmt = (n) => (typeof n === "number" ? n.toFixed(1) : n || "N/A");
+    fetch(`${BASE}/api/places`, { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log('PLACES FROM API:', data);
+        setPlaces(data);
+      })
+      .catch((err) => console.error('Error fetching places:', err));
+  }, []);
 
   return (
-    <div className="tracks-container">
-      <h2 className="tracks-title">My Adrenalink Tracks</h2>
+    <MapContainer
+      center={[54.5, -3]}
+      zoom={6}
+      style={{ height: '80vh', width: '100%' }}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+      />
 
-      {tracks.length === 0 ? (
-        <p className="no-tracks">No favorite tracks yet.</p>
-      ) : (
-        <div className="tracks-grid">
-          {tracks.map((track) => {
-            const key = track.id || track._id || `${track.name}-${track.location}`;
-            const placeId = track.id || track.place_id || track._id;
+      {places.map((place) => {
+        const { id, name, description, latitude, longitude } = place;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
 
-            return (
-              <div key={key} className="track-card-wrapper">
-                <Link to={`/place/${placeId}`} className="track-card">
-                  <img
-                    src={safeImg(track.image)}
-                    alt={track.name ? `Place: ${track.name}` : "Place image"}
-                    className="track-image"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = "/images/placeholder.jpg";
-                    }}
-                  />
-                  <div className="track-info">
-                    <div className="track-name">{track.name || "Unnamed place"}</div>
-                    <div className="track-location">{track.location || "Unknown location"}</div>
-                    <div className="track-rating">
-                      <FaStar aria-hidden="true" /> {fmt(track.rating)}
-                    </div>
-                  </div>
-                </Link>
+        if (isNaN(lat) || isNaN(lng)) return null;
 
-                <button
-                  className="delete-track-btn"
-                  onClick={() => {
-                    setTrackToDelete(track);
-                    setShowConfirm(true);
-                  }}
-                  aria-label={`Remove ${track.name || "this place"} from favorites`}
+        return (
+          <Marker key={id} position={[lat, lng]} icon={customIcon}>
+            <Popup>
+              <strong>{name}</strong>
+              <br />
+              {description}
+              <br />
+
+              <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+                <Link to={`/place/${id}`}>View Place Details</Link>
+
+                <a
+                  href={gmapsViewUrl(lat, lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <FaTrash />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  Open in Google Maps
+                </a>
 
-      {showConfirm && (
-        <ConfirmModal
-          title="Delete Track"
-          message={
-            trackToDelete?.name
-              ? `Are you sure you want to remove "${trackToDelete.name}" from your tracks?`
-              : "Are you sure you want to remove this place from your tracks?"
-          }
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => {
-            setShowConfirm(false);
-            setTrackToDelete(null);
-          }}
-        />
-      )}
-    </div>
+                <a
+                  href={gmapsDirectionsUrl(lat, lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Directions in Google Maps
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </MapContainer>
   );
 }
