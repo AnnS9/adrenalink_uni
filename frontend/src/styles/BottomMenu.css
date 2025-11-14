@@ -1,9 +1,11 @@
+
 .bottom-menu {
   position: fixed;
   z-index: 1000;
+  top: 0;
   left: 0;
   right: 0;
-  top: 0;
+  bottom: auto;
   height: 64px;
   display: flex;
   align-items: center;
@@ -20,7 +22,7 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
 }
 
-/* Content offset so nav does not cover the page */
+
 main,
 .page-container,
 .app-shell main,
@@ -28,7 +30,6 @@ main,
   padding-top: 64px;
 }
 
-/* Links container */
 .bottom-menu-links {
   display: flex;
   align-items: center;
@@ -56,7 +57,7 @@ main,
   display: block;
 }
 
-/* Nav items */
+
 .nav-item {
   display: inline-flex;
   flex-direction: row;
@@ -85,7 +86,7 @@ main,
   height: 18px;
 }
 
-/* Underline animation for links on desktop */
+
 .nav-item.is-link::after {
   content: '';
   position: absolute;
@@ -114,9 +115,9 @@ main,
 /* Mobile tweaks */
 @media (max-width: 767.98px) {
   .bottom-menu {
-    justify-content: space-between;
-    padding: 0 10px;
     height: 56px;
+    padding: 0 10px;
+    justify-content: space-between;
   }
 
   .desktop-logo {
@@ -141,7 +142,6 @@ main,
     height: 22px;
   }
 
-  /* Shorter underline on small screens */
   .nav-item.is-link::after {
     left: 10px;
     right: 10px;

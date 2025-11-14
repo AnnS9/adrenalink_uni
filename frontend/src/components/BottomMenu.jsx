@@ -54,7 +54,6 @@ export default function BottomMenu({
       role="navigation"
       aria-label="Primary"
     >
-      {/* Logo */}
       <NavLink
         to="/"
         className="desktop-logo-link"
@@ -63,7 +62,6 @@ export default function BottomMenu({
         <img src="/images/logo1.png" alt="Adrenalink" className="desktop-logo" />
       </NavLink>
 
-      {/* Links container - always visible */}
       <div className="bottom-menu-links">
         <NavLink
           to="/"
@@ -119,7 +117,6 @@ export default function BottomMenu({
           </>
         )}
 
-        {/* Auth */}
         <div className="auth-buttons" role="group" aria-label="Account">
           {!isAuthLoading &&
             (isLoggedIn ? (
