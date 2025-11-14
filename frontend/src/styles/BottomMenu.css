@@ -3,40 +3,37 @@
   z-index: 1000;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: 0;
+  height: 64px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  height: 60px;
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 20px;
   background-color: rgba(17, 17, 17, 0.94);
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   color: #fff;
   font-weight: 600;
-  overflow: visible;
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
 }
 
+.bottom-menu.scrolled {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+
+/* Content offset so nav does not cover the page */
 main,
 .page-container,
-.app-shell main {
-  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+.app-shell main,
+.app-layout > main {
+  padding-top: 64px;
 }
 
-/* Container for mobile links */
+/* Links container */
 .bottom-menu-links {
-  display: none;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-evenly;
-  gap: 4px;
-}
-
-.bottom-menu-links.open {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* Auth buttons */
@@ -46,24 +43,35 @@ main,
   gap: 4px;
 }
 
-/* Main nav item */
+/* Logo */
+.desktop-logo-link {
+  display: flex;
+  margin-right: auto;
+  align-items: center;
+  height: 100%;
+}
+
+.desktop-logo {
+  height: 22px;
+  display: block;
+}
+
+/* Nav items */
 .nav-item {
   display: inline-flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  min-width: 40px;
-  padding: 6px 8px;
-  gap: 4px;
-  font-size: 11px;
+  padding: 8px 12px;
+  gap: 6px;
+  font-size: 13px;
   color: inherit;
   text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
   position: relative;
-  transition: color .2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease;
   border-radius: 8px;
   flex-shrink: 0;
 }
@@ -73,147 +81,55 @@ main,
 }
 
 .nav-item svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
 }
 
-/* Hamburger toggle */
-.hamburger-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: #fff;
-  font-size: 1.3rem;
-  padding: 6px 10px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+/* Underline animation for links on desktop */
+.nav-item.is-link::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 3px;
+  background-color: transparent;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-.hamburger-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  transform: scale(1.03);
+.nav-item.is-link:hover::after,
+.nav-item.is-link.active::after {
+  background-color: #ed0000;
+  transform: scaleX(1);
 }
 
-.hamburger-toggle:active {
-  transform: scale(0.97);
+/* Button hover */
+.nav-item.is-button:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Desktop logo */
-.desktop-logo-link {
-  display: none;
-}
-
-/* Desktop view */
-@media (min-width: 768px) {
-  .bottom-menu {
-    top: 0;
-    bottom: auto;
-    height: 64px;
-    padding: 0 28px;
-    justify-content: flex-end;
-    gap: 8px;
-    background-color: rgba(17, 17, 17, 0.94);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .desktop-logo-link {
-    display: flex;
-    margin-right: auto;
-    align-items: center;
-    height: 100%;
-  }
-
-  .desktop-logo {
-    height: 22px;
-    display: block;
-  }
-
-  .bottom-menu-links {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: static;
-  }
-
-  .hamburger-toggle {
-    display: none;
-  }
-
-  .nav-item {
-    flex-direction: row;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 10px 14px;
-    height: auto;
-    min-width: auto;
-  }
-
-  .nav-item svg {
-    display: none;
-  }
-
-  /* Underline animation */
-  .nav-item.is-link::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 6px;
-    height: 3px;
-    background-color: transparent;
-    border-radius: 2px;
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform .2s ease, background-color .2s ease;
-  }
-
-  .nav-item.is-link:hover::after,
-  .nav-item.is-link.active::after {
-    background-color: #ed0000;
-    transform: scaleX(1);
-  }
-
-  .nav-item.is-button:hover {
-    background-color: rgba(255,255,255,0.07);
-  }
-
-  .app-layout > main {
-    padding-top: 64px;
-  }
-
-  /* No extra bottom padding on desktop */
-  main,
-  .page-container,
-  .app-shell main {
-    padding-bottom: 0;
-  }
-}
-
-/* Mobile view */
+/* Mobile tweaks */
 @media (max-width: 767.98px) {
   .bottom-menu {
     justify-content: space-between;
+    padding: 0 10px;
+    height: 56px;
+  }
+
+  .desktop-logo {
+    height: 20px;
   }
 
   .bottom-menu-links {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 60px;
-    background-color: rgba(17, 17, 17, 0.94);
-    padding: 8px 10px 10px;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    gap: 4px;
   }
 
-  .auth-buttons {
-    width: 100%;
-    justify-content: center;
-    margin-top: 4px;
+  .nav-item {
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   .nav-item .label {
@@ -221,7 +137,14 @@ main,
   }
 
   .nav-item svg {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Shorter underline on small screens */
+  .nav-item.is-link::after {
+    left: 10px;
+    right: 10px;
+    bottom: 2px;
   }
 }

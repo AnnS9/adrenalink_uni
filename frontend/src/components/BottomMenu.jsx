@@ -9,8 +9,6 @@ import {
   faUserShield,
   faRightFromBracket,
   faRightToBracket,
-  faBars,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import '../styles/BottomMenu.css';
 
@@ -22,7 +20,6 @@ export default function BottomMenu({
   onLogoutClick,
 }) {
   const [scrolled, setScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
@@ -51,13 +48,9 @@ export default function BottomMenu({
   const navLinkClasses = ({ isActive }) =>
     `nav-item is-link ${isActive ? 'active' : ''}`.trim();
 
-  const closeMenu = () => setIsMenuOpen(false);
-
   return (
     <nav
-      className={`bottom-menu ${scrolled ? 'scrolled' : ''} ${
-        isMenuOpen ? 'menu-open' : ''
-      }`}
+      className={`bottom-menu ${scrolled ? 'scrolled' : ''}`}
       role="navigation"
       aria-label="Primary"
     >
@@ -66,30 +59,17 @@ export default function BottomMenu({
         to="/"
         className="desktop-logo-link"
         aria-label="Adrenalink home"
-        onClick={closeMenu}
       >
         <img src="/images/logo1.png" alt="Adrenalink" className="desktop-logo" />
       </NavLink>
 
-      {/* Hamburger toggle - visible on mobile in CSS */}
-      <button
-        className="hamburger-toggle"
-        type="button"
-        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-        aria-expanded={isMenuOpen}
-        onClick={() => setIsMenuOpen((open) => !open)}
-      >
-        <FontAwesomeIcon icon={isMenuOpen ? faXmark : faBars} />
-      </button>
-
-      {/* Links container */}
-      <div className={`bottom-menu-links ${isMenuOpen ? 'open' : ''}`}>
+      {/* Links container - always visible */}
+      <div className="bottom-menu-links">
         <NavLink
           to="/"
           end
           className={navLinkClasses}
           aria-label="Home"
-          onClick={closeMenu}
         >
           <FontAwesomeIcon icon={faHouse} />
           <span className="label">HOME</span>
@@ -101,7 +81,6 @@ export default function BottomMenu({
               to="/map"
               className={navLinkClasses}
               aria-label="Map"
-              onClick={closeMenu}
             >
               <FontAwesomeIcon icon={faMapLocationDot} />
               <span className="label">MAP</span>
@@ -112,7 +91,6 @@ export default function BottomMenu({
                 to="/tracks"
                 className={navLinkClasses}
                 aria-label="Tracks"
-                onClick={closeMenu}
               >
                 <FontAwesomeIcon icon={faRoute} />
                 <span className="label">TRACKS</span>
@@ -123,7 +101,6 @@ export default function BottomMenu({
               to="/adrenaid"
               className={navLinkClasses}
               aria-label="My profile"
-              onClick={closeMenu}
             >
               <FontAwesomeIcon icon={faIdCard} />
               <span className="label">MY ID</span>
@@ -134,7 +111,6 @@ export default function BottomMenu({
                 to="/adminpanel"
                 className={navLinkClasses}
                 aria-label="Admin"
-                onClick={closeMenu}
               >
                 <FontAwesomeIcon icon={faUserShield} />
                 <span className="label">ADMIN</span>
@@ -148,10 +124,7 @@ export default function BottomMenu({
           {!isAuthLoading &&
             (isLoggedIn ? (
               <button
-                onClick={() => {
-                  onLogoutClick();
-                  closeMenu();
-                }}
+                onClick={onLogoutClick}
                 className="nav-item is-button"
                 aria-label="Log out"
               >
@@ -160,10 +133,7 @@ export default function BottomMenu({
               </button>
             ) : (
               <button
-                onClick={() => {
-                  onAuthClick();
-                  closeMenu();
-                }}
+                onClick={onAuthClick}
                 className="nav-item is-button"
                 aria-label="Log in or sign up"
               >
