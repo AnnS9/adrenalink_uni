@@ -436,3 +436,14 @@ h1 {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+.home-loading {
+  margin-top: 2rem;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.home-error {
+  margin-top: 2rem;
+  color: #ff4d4f;
+  font-size: 0.95rem;
+}
