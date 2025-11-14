@@ -102,7 +102,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
         {!isLoggedIn && (
           <div className="signin-banner">
             <p>
-              🔒 Sign in to access the <strong>Community Hub</strong> and share your reviews.
+               Sign in to access the <strong>Community Hub</strong> and share your reviews.
             </p>
             <button className="btn-small" onClick={() => openAuth(`/category/${id}`)}>
               Sign In
@@ -141,9 +141,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
                   </div>
 
                   <div className="place-meta">
-                    <p className="place-desc">
-                      {place.description || "Explore this spot and see what the community says."}
-                    </p>
+                    
 
                     <div className="rating-stars">
                       {renderStars(rounded)}
