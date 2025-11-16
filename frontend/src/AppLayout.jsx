@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import Footer from './components/Footer';
-import BottomMenu from './components/BottomMenu';
+import TopMenu from './components/TopMenu';
 
 export default function AppLayout({
   isLoggedIn,
@@ -18,7 +18,7 @@ export default function AppLayout({
 
       <Footer />
 
-      <BottomMenu
+      <TopMenu
         isAuthLoading={isAuthLoading}
         isLoggedIn={isLoggedIn}
         userRole={userRole}

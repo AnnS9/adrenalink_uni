@@ -137,7 +137,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
                       }}
                     />
                     <div className="img-gradient" />
-                    <div className="place-title-onimage">{place.name || "Unnamed Place"}</div>
+                    <div className="place-title-onimage">{place.name || "Some Place"}</div>
                   </div>
 
                   <div className="place-meta">

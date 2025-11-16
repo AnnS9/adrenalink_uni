@@ -47,7 +47,7 @@ export default function CategoryMap({ places = [] }) {
           <Marker key={place.id} position={[place.latitude, place.longitude]} icon={customIcon}>
             <Popup>
               <strong>{place.name}</strong><br />
-              {place.description}<br />
+              
               <Link to={`/place/${place.id}`} className="popup-link">View Place Details</Link>
             </Popup>
           </Marker>

@@ -57,7 +57,7 @@ export default function UkMap() {
       />
 
       {places.map((place) => {
-        const { id, name, description, latitude, longitude } = place;
+        const { id, name, latitude, longitude } = place;
         const lat = Number(latitude);
         const lng = Number(longitude);
 
@@ -68,8 +68,7 @@ export default function UkMap() {
             <Popup>
               <strong>{name}</strong>
               <br />
-              {description}
-              <br />
+              
 
               <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
                 <Link to={`/place/${id}`}>View Place Details</Link>

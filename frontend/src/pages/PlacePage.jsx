@@ -306,7 +306,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
                     <div className="popup-header">
                       <strong>{place.name}</strong>
                     </div>
-                    <p>{place.description || place.location}</p>
+                    
                   </Popup>
                 </Marker>
               </MapContainer>
