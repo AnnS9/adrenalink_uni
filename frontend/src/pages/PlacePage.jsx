@@ -198,7 +198,7 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
       </nav>
 
       <div className="image-container">
-        <img src={place.image} alt={place.name} className="place-image" />
+        <img src={place.image} alt={place.name} className="place-image" loading="lazy" />
         <div className="place-details">
           <div className="map-button-container-horizontal">
             <div className="map-button-item">

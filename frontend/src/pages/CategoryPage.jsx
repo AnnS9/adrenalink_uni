@@ -58,6 +58,7 @@ export default function CategoryPage({ isLoggedIn, openAuth }) {
       <header
         className="hero-image hero-alt"
         style={{ backgroundImage: `url(${category.image || ""})` }}
+        loading="lazy"
       >
         <div className="hero-overlay">
           <h1 className="hero-title big">{category.name?.toUpperCase()}</h1>
