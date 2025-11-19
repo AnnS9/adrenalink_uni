@@ -7,12 +7,15 @@ export default function Footer() {
     <footer className="app-footer" role="contentinfo">
       <div className="footer-inner">
         <div className="footer-brand">
-          <Link to="/" className="brand">
-            <img src="/images/logo1.png" alt="Go to Adrenalink homepage" aria-hidden="true" className="brand-icon" />
-            
-          </Link>
-          <p className="tagline">Find your next rush</p>
-        </div>
+        <Link to="/" className="brand">
+          <img 
+            src="/images/logo1.png" 
+            alt="Go to Adrenalink homepage" 
+            className="brand-icon" 
+          />
+        </Link>
+        <p className="tagline">Find your next rush</p>
+      </div>
 
         <nav className="footer-nav" aria-label="Primary footer">
           <Link to="/">Home</Link>
