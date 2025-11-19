@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="footer-inner">
         <div className="footer-brand">
           <Link to="/" className="brand">
-            <img src="/images/logo1.png" alt="" aria-hidden="true" className="brand-icon" />
+            <img src="/images/logo1.png" alt="Adrenalink Logo" aria-hidden="true" className="brand-icon" />
             
           </Link>
           <p className="tagline">Find your next rush</p>
