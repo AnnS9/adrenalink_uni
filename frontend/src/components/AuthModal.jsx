@@ -39,41 +39,47 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, nextPath })
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+  e.preventDefault();
+  setError(null);
+  setIsLoading(true);
 
-    const endpoint = isLoginMode ? `${BASE}/api/login` : `${BASE}/api/signup`;
-    const payload = isLoginMode
-      ? { email, password }
-      : { username, full_name: fullName, email, password };
+  const endpoint = isLoginMode ? `${BASE}/api/login` : `${BASE}/api/signup`;
+  const payload = isLoginMode
+    ? { email, password }
+    : { username, full_name: fullName, email, password };
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        throw new Error(text || `HTTP ${response.status}`);
+    if (!response.ok) {
+      if (isLoginMode && response.status === 401) {
+        setError('Incorrect email or password');
+        return;
       }
 
-      const data = await parseJsonSafe(response);
-      if (!data || !data.user) throw new Error('Invalid server response');
-
-      localStorage.setItem('user', JSON.stringify(data.user));
-      if (onLoginSuccess) onLoginSuccess(data.user);
-
-      navigate(nextPath || '/adrenaid', { replace: true });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `HTTP ${response.status}`);
     }
-  };
+
+    const data = await parseJsonSafe(response);
+    if (!data || !data.user) throw new Error('Invalid server response');
+
+    localStorage.setItem('user', JSON.stringify(data.user));
+    if (onLoginSuccess) onLoginSuccess(data.user);
+
+    navigate(nextPath || '/adrenaid', { replace: true });
+  } catch (err) {
+    setError(err.message || 'Something went wrong');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   if (!isOpen) return null;
 
