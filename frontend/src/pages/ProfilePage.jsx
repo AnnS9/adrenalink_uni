@@ -117,9 +117,19 @@ export default function ProfilePage() {
       )}
 
       <div className="profile-actions">
-        <button onClick={() => navigate("/adrenaid/edit")}>Edit Profile</button>
-        <button onClick={() => navigate("/tracks")}>Tracks</button>
-      </div>
+  <button onClick={() => navigate("/adrenaid/edit")}>Edit Profile</button>
+  <button
+    onClick={() => {
+      if (profile.role === "admin") {
+        navigate("/adminpanel"); 
+      } else {
+        navigate("/tracks");
+      }
+    }}
+  >
+    {profile.role === "admin" ? "Admin Panel" : "Tracks"}
+  </button>
+</div>
 
       <br />
       <br />
