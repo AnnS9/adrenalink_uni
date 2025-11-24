@@ -24,8 +24,8 @@ export default function Footer() {
         </nav>
 
         <nav className="footer-legal" aria-label="Legal">
-          <Link to="/privacy">Privacy</Link>
-          <Link to="/terms">Terms</Link>
+          <Link to="/">Privacy</Link>
+          <Link to="/">Terms</Link>
           
         </nav>
 
