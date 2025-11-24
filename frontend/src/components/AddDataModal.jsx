@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/AdminPanel.css';
+import { apiSend } from '../lib/api';
 
 const defaultData = {
   users: {
@@ -28,29 +29,23 @@ const defaultData = {
 function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
   const [formData, setFormData] = useState(defaultData[activeTab]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-
-
- 
   useEffect(() => {
     if (isOpen) setFormData(defaultData[activeTab]);
   }, [isOpen, activeTab]);
 
-  /* Generic change handler*/
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /*  Submit handler */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
-
-    const endpoint = `/api/admin/${activeTab}`;
-
-
+    
     let payload = { ...formData };
     if (activeTab === 'places') {
       payload = {
@@ -63,24 +58,20 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
     }
 
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Failed to add item');
+      const result = await apiSend(`/api/admin/${activeTab}`, 'POST', payload);
+      if (result.error) throw new Error(result.error);
 
-      onSuccess();         
-      setFormData(defaultData[activeTab]); 
+      onSuccess();
+      setFormData(defaultData[activeTab]);
     } catch (err) {
-      setError(err.message);
+      console.error('[AddDataModal] Error:', err);
+      setError(err.message || 'Failed to add item');
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!isOpen) return null;
-
 
   const renderFields = () => {
     switch (activeTab) {
@@ -125,7 +116,6 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
     }
   };
 
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="admin-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -135,7 +125,9 @@ function AddDataModal({ isOpen, onClose, activeTab, onSuccess }) {
         <form className="add-data-form" onSubmit={handleSubmit}>
           {renderFields()}
           {error && <p className="error-text">{error}</p>}
-          <button type="submit" className="submit-btn">Submit</button>
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? 'Submitting...' : 'Submit'}
+          </button>
         </form>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/Community.css";
-import { apiGet, apiSend } from "../lib/api";
 
 export default function Community({ isLoggedIn }) {
   const [posts, setPosts] = useState([]);
@@ -11,128 +10,101 @@ export default function Community({ isLoggedIn }) {
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const loadPosts = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const d = await apiGet("/api/community");
-      setPosts(Array.isArray(d.posts) ? d.posts : []);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
+  // Check if user is admin
   useEffect(() => {
-    apiGet("/api/check-auth", { credentials: "include" })
-      .then((d) => setIsAdmin(Boolean(d?.user?.role === "admin")))
+    fetch(`${BACKEND_URL}/api/check-auth`, { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setIsAdmin(data.user_role === "admin"))
       .catch(() => setIsAdmin(false));
-    loadPosts();
-  }, []);
+  }, [BACKEND_URL]);
 
+  // Load posts
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${BACKEND_URL}/api/community`, { credentials: "include" })
+      .then(res => res.json())
+      .then(data => setPosts(data.posts || []))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [BACKEND_URL]);
+
+  // Input change handler
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewPost((prev) => ({ ...prev, [name]: value }));
+    setNewPost(prev => ({ ...prev, [name]: value }));
     setError("");
   };
 
+  // Submit new post
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const title = newPost.title.trim();
-    const body = newPost.body.trim();
-    const category = newPost.category.trim();
-    if (!title || !body || !category) {
+    const trimmed = {
+      title: newPost.title.trim(),
+      body: newPost.body.trim(),
+      category: newPost.category.trim()
+    };
+    if (!trimmed.title || !trimmed.body || !trimmed.category) {
       setError("All fields are required!");
       return;
     }
+
     try {
-      const res = await apiSend("/api/community", "POST", { title, body, category });
-      setPosts((prev) => [res.post, ...prev]);
+      const res = await fetch(`${BACKEND_URL}/api/community`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(trimmed)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add post");
+      setPosts(prev => [data.post, ...prev]);
       setShowForm(false);
       setNewPost({ title: "", body: "", category: "" });
-    } catch (e) {
-      setError(e.message);
+      setError("");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
+  // Delete post (admin only)
   const handleDelete = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      await apiSend(`/api/community/${postId}`, "DELETE");
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } catch (e) {
-      setError(e.message);
+      const res = await fetch(`${BACKEND_URL}/api/community/${postId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete post");
+      setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch (err) {
+      setError(err.message);
     }
   };
 
-  if (!isLoggedIn) return <p className="community-guard">You must be logged in to view this forum.</p>;
+  if (!isLoggedIn) return <p>You must be logged in to view this forum.</p>;
+  if (loading) return <p>Loading posts...</p>;
 
   return (
     <div className="community-page">
-      <header className="community-header">
-        <h1>Community Forum</h1>
-        <div className="community-actions">
-          <button className="btn primary" onClick={() => setShowForm(true)}>Add New Post</button>
-        </div>
-      </header>
+      <h1>Community Forum</h1>
 
-      {error && <p className="error">{error}</p>}
-
-      {loading ? (
-        <div className="posts-skeleton">
-          <div className="skeleton-card" />
-          <div className="skeleton-card" />
-          <div className="skeleton-card" />
-        </div>
-      ) : posts.length === 0 ? (
-        <p className="empty-state">No posts yet.</p>
-      ) : (
-        <div className="posts-list">
-          {posts.map((post) => (
-            <Link to={`/community/${post.id}`} key={post.id} className="post-card-link">
-              <div className="post-card">
-                <div className="post-card-top">
-                  <span className="post-tag">#{post.category}</span>
-                </div>
-                <h2 className="post-title">{post.title}</h2>
-                <p className="post-body">{post.body.length > 180 ? post.body.slice(0, 180) + "…" : post.body}</p>
-                <div className="post-meta">
-                  <span className="post-author">By {post.username}</span>
-                </div>
-                {isAdmin && (
-                  <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(post.id);
-                    }}
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <button onClick={() => setShowForm(true)}>Add New Post</button>
 
       {showForm && (
-        <div className="modal" role="dialog" aria-modal="true">
+        <div className="modal">
           <div className="modal-content">
-            <div className="modal-header">
-              <h2>Add New Post</h2>
-              <button className="close" onClick={() => setShowForm(false)} aria-label="Close">×</button>
-            </div>
+            <h2>Add New Post</h2>
             {error && <p className="error">{error}</p>}
-            <form onSubmit={handleSubmit} className="post-form">
+            <form onSubmit={handleSubmit}>
               <input
                 type="text"
                 name="category"
                 placeholder="Category (tag)"
                 value={newPost.category}
                 onChange={handleInputChange}
-                className="input"
               />
               <input
                 type="text"
@@ -140,22 +112,45 @@ export default function Community({ isLoggedIn }) {
                 placeholder="Post Title"
                 value={newPost.title}
                 onChange={handleInputChange}
-                className="input"
               />
               <textarea
                 name="body"
                 placeholder="Post Content"
                 value={newPost.body}
                 onChange={handleInputChange}
-                className="textarea"
-                rows={5}
               />
               <div className="form-buttons">
                 <button type="submit" className="sub-btn">Submit</button>
-                <button type="button" className="btn" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="button" onClick={() => setShowForm(false)}>Cancel</button>
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {posts.length === 0 ? (
+        <p>No posts yet.</p>
+      ) : (
+        <div className="posts-list">
+          {posts.map(post => (
+            <Link to={`/community/${post.id}`} key={post.id} className="post-card-link">
+              <div className="post-card">
+                <h2>{post.title}</h2>
+                <p>{post.body.substring(0, 100)}...</p>
+                <p><em>By {post.username}</em></p>
+                <span className="post-tag">#{post.category}</span>
+
+                {isAdmin && (
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => { e.preventDefault(); handleDelete(post.id); }}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </div>

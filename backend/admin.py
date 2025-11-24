@@ -1,16 +1,14 @@
 import sqlite3
 from functools import wraps
 from typing import List, Tuple, Dict, Any
-from flask import Blueprint, jsonify, request, session, abort
+from flask import Blueprint, jsonify, request, session
 from werkzeug.security import generate_password_hash
 from db import get_db
 
-# Blueprint
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
 
 def admin_required(f):
-    """Decorator that ensures the requester has an admin role."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("role") != "admin":
@@ -20,17 +18,15 @@ def admin_required(f):
 
 
 def _error(message: str, status: int = 400):
-    """Consistent error response helper."""
     return jsonify({"error": message}), status
 
 
 def _validate_fields(data: Dict[str, Any], required: List[str]) -> Tuple[bool, List[str]]:
-    """Return True/[] if all required fields are present & non‑empty, else False/missing list."""
     missing = [field for field in required if not data.get(field)]
     return (len(missing) == 0, missing)
 
 
-# READ (GET)
+# READ
 @admin_bp.route("/users", methods=["GET"])
 @admin_required
 def get_users():
@@ -44,7 +40,7 @@ def get_users():
 def get_places():
     db = get_db()
     places = db.execute("""
-        SELECT p.*, c.name AS category_id
+        SELECT p.*, c.name AS category_name
         FROM places p
         LEFT JOIN categories c ON p.category_id = c.id
         ORDER BY p.id
@@ -60,7 +56,7 @@ def get_categories():
     return jsonify([dict(row) for row in cats]), 200
 
 
-# CREATE (POST)
+# CREATE
 @admin_bp.route("/users", methods=["POST"])
 @admin_required
 def add_user():
@@ -137,21 +133,21 @@ def add_place():
         return _error(f"Missing required field(s): {', '.join(missing)}")
 
     try:
-        fields = (
-            data["name"].strip(),
-            data.get("description", "").strip() or None,
-            data.get("location", "").strip() or None,
-            data.get("image", "").strip() or None,
-            float(data.get("rating")) if data.get("rating") else None,
-            float(data.get("latitude")) if data.get("latitude") else None,
-            float(data.get("longitude")) if data.get("longitude") else None,
-            int(data["category_id"]),
-        )
+        rating = float(data["rating"]) if data.get("rating") not in (None, "") else None
+        latitude = float(data["latitude"]) if data.get("latitude") not in (None, "") else None
+        longitude = float(data["longitude"]) if data.get("longitude") not in (None, "") else None
+        category_id = int(data["category_id"])
+    
     except ValueError:
         return _error("Invalid numeric value", 400)
 
+    name = data["name"].strip()
+    description = data.get("description", "").strip() or None
+    location = data.get("location", "").strip() or None
+    image = data.get("image", "").strip() or None
+
     db = get_db()
-    category = db.execute("SELECT id FROM categories WHERE id = ?", (fields[-1],)).fetchone()
+    category = db.execute("SELECT id FROM categories WHERE id = ?", (category_id,)).fetchone()
     if category is None:
         return _error("Category not found", 404)
 
@@ -160,11 +156,14 @@ def add_place():
             INSERT INTO places
             (name, description, location, image, rating, latitude, longitude, category_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, fields)
+        """, (name, description, location, image, rating, latitude, longitude, category_id))
         db.commit()
         return jsonify({"message": "Place added successfully."}), 201
+    except sqlite3.IntegrityError:
+        return _error("Place with this name already exists", 409)
     except Exception as e:
         return _error(str(e), 500)
+
 
 
 # UPDATE (PUT)

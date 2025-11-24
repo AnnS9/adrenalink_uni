@@ -397,13 +397,14 @@ def create_app():
 
     return app
 
-@community_bp.get("")
+@community_bp.get("/", strict_slashes=False)
 def get_posts():
     db = get_db()
     posts = db.execute("SELECT * FROM forum_posts ORDER BY created_at DESC").fetchall()
     return jsonify({"posts": [dict(p) for p in posts]})
 
-@community_bp.post("")
+# POST create a new post
+@community_bp.post("/", strict_slashes=False)
 def create_post():
     user_id = session.get("user_id")
     if not user_id:
@@ -421,13 +422,14 @@ def create_post():
     post_id = str(uuid.uuid4())
     db.execute(
         "INSERT INTO forum_posts (id, category, title, body, username) VALUES (?, ?, ?, ?, ?)",
-        (post_id, category, title, body, user["username"]),
+        (post_id, category, title, body, user["username"])
     )
     db.commit()
     new_post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
     return jsonify({"post": dict(new_post)}), 201
 
-@community_bp.get("/<string:post_id>")
+# GET a single post with comments
+@community_bp.get("/<string:post_id>", strict_slashes=False)
 def get_post(post_id):
     db = get_db()
     post = db.execute("SELECT * FROM forum_posts WHERE id = ?", (post_id,)).fetchone()
@@ -438,7 +440,8 @@ def get_post(post_id):
     ).fetchall()
     return jsonify({**dict(post), "comments": [dict(c) for c in comments]})
 
-@community_bp.post("/<string:post_id>/comments")
+# POST add a comment to a post
+@community_bp.post("/<string:post_id>/comments", strict_slashes=False)
 def add_comment(post_id):
     user_id = session.get("user_id")
     if not user_id:
@@ -453,18 +456,28 @@ def add_comment(post_id):
         return jsonify({"error": "User not found"}), 404
     db.execute(
         "INSERT INTO forum_comments (post_id, username, body) VALUES (?, ?, ?)",
-        (post_id, user["username"], body),
+        (post_id, user["username"], body)
     )
     db.commit()
-    return jsonify({"message": "Comment added"}), 201
+    return jsonify({"comment": {"id": str(uuid.uuid4()), "body": body, "username": "You", "created_at": None}}), 201
 
-@community_bp.delete("/<string:post_id>")
+# DELETE a post
+@community_bp.delete("/<string:post_id>", strict_slashes=False)
 @require_admin
 def delete_post(post_id):
     db = get_db()
     db.execute("DELETE FROM forum_posts WHERE id = ?", (post_id,))
     db.commit()
     return jsonify({"message": "Post deleted"}), 200
+
+# DELETE a comment
+@community_bp.delete("/<string:post_id>/comments/<string:comment_id>", strict_slashes=False)
+  
+def delete_comment(post_id, comment_id):
+    db = get_db()
+    db.execute("DELETE FROM forum_comments WHERE id = ? AND post_id = ?", (comment_id, post_id))
+    db.commit()
+    return jsonify({"message": "Comment deleted"}), 200
 
 app = create_app()
 
