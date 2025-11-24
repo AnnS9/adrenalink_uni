@@ -17,13 +17,13 @@ function AdminPanel() {
     setLoading(true);
     setError(null);
     try {
-      
       const result = await apiGet(`/api/admin/${activeTab}`);
-      
+    
       const rows = Array.isArray(result) ? result : result?.items || [];
       setData(rows);
     } catch (err) {
-      setError(err.message || "Failed to load data");
+      console.error("Fetch error:", err);
+      setError("Failed to load data or invalid response");
     } finally {
       setLoading(false);
     }
@@ -56,9 +56,16 @@ function AdminPanel() {
     }
     if (window.confirm(`Delete this ${activeTab.slice(0, -1)}?`)) {
       try {
-        await apiSend(`/api/admin/${activeTab}/${itemId}`, "DELETE");
+        const response = await apiSend(
+          `/api/admin/${activeTab}/${itemId}`,
+          "DELETE"
+        );
+        if (!response || response.error) {
+          throw new Error(response?.error || "Delete failed");
+        }
         fetchData();
       } catch (err) {
+        console.error("Delete error:", err);
         setError(err.message || "Failed to delete item");
       }
     }
@@ -140,7 +147,11 @@ function AdminPanel() {
               <td>{item.category_id || "N/A"}</td>
               <td>{item.latitude ?? "N/A"}</td>
               <td>{item.longitude ?? "N/A"}</td>
-              <td>{item.description || "N/A"}</td>
+              <td>{item.description
+        ? item.description.length > 30
+          ? item.description.slice(0, 30) + "…"
+          : item.description
+        : "N/A"}</td>
             </>
           )}
 
