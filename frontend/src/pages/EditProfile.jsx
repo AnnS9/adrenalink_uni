@@ -138,7 +138,7 @@ export default function EditProfile() {
         <form onSubmit={handleSubmit} className="edit-form">
           <div className="profile-picture-wrapper">
             <img
-              src={form.profile_picture || "/images/default_avatar.jpeg"}
+              src={form.profile_picture || "/images/default_avatar.png"}
               alt="Profile"
               className="profile-picture"
             />

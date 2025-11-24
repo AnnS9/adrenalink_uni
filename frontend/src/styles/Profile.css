@@ -52,7 +52,7 @@
 .profile-actions .danger {
   background: #990000;
 }
-/* Profile age activities  */
+
 .profile-activities {
   width: 100%;
   display: flex;
@@ -271,13 +271,15 @@
 
 /* Activity image */
 .activity-image {
-  max-width: 70%;
-  max-height: 70%;
-  object-fit: contain;
-  transition: transform 0.2s ease;
+  width: 3rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
 }
 
-/* Slight zoom on hover */
+
 .activity-item:hover .activity-image {
   transform: scale(1.1);
 }
