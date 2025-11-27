@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import '../styles/Tracks.css';
 import ConfirmModal from '../components/ConfirmModal';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+
 export default function Tracks() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,28 +22,23 @@ export default function Tracks() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/user/favorites', {
+        const response = await fetch(`${BACKEND_URL}/api/user/favorites`, {
           credentials: 'include',
           signal,
         });
 
-       
         if (!response.ok) {
           const text = await response.text();
           throw new Error(`Server error: ${text}`);
         }
 
         const contentType = response.headers.get('content-type') || '';
-
         if (!contentType.includes('application/json')) {
-          
           const text = await response.text();
           throw new Error(`Expected JSON, got: ${text}`);
         }
 
         const data = await response.json();
-
-        
         setTracks(Array.isArray(data) ? data : []);
       } catch (err) {
         if (err.name === 'AbortError') return;
@@ -52,10 +49,7 @@ export default function Tracks() {
     };
 
     fetchFavorites();
-
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, []);
 
   const handleDeleteConfirm = async () => {
@@ -64,7 +58,7 @@ export default function Tracks() {
     try {
       setError(null);
 
-      const res = await fetch('/api/user/favorites', {
+      const res = await fetch(`${BACKEND_URL}/api/user/favorites`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -72,32 +66,13 @@ export default function Tracks() {
       });
 
       if (!res.ok) {
-       
         const ct = res.headers.get('content-type') || '';
         const body = ct.includes('application/json') ? await res.json() : await res.text();
         const message = typeof body === 'string' ? body : JSON.stringify(body);
         throw new Error(`Failed to remove track: ${message}`);
       }
 
-      if (res.status === 204) {
-        setTracks(prev => prev.filter(t => t.id !== trackToDelete.id));
-      } else {
-       
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          const payload = await res.json();
-        
-          if (Array.isArray(payload)) {
-            setTracks(payload);
-          } else {
-            setTracks(prev => prev.filter(t => t.id !== trackToDelete.id));
-          }
-        } else {
-        
-          setTracks(prev => prev.filter(t => t.id !== trackToDelete.id));
-        }
-      }
-
+      setTracks(prev => prev.filter(t => t.id !== trackToDelete.id));
       setTrackToDelete(null);
       setShowConfirm(false);
     } catch (err) {
@@ -128,8 +103,8 @@ export default function Tracks() {
                   }}
                 />
                 <div className="track-info">
-                  <div className="track-name">{track.name}</div>
-                  <div className="track-location">{track.location}</div>
+                  <div className="track-name">{track.name || 'Unknown Track'}</div>
+                  <div className="track-location">{track.location || 'Unknown Location'}</div>
                   <div className="track-rating">
                     <FaStar /> {track.rating ?? 'N/A'}
                   </div>
@@ -142,7 +117,7 @@ export default function Tracks() {
                   setTrackToDelete(track);
                   setShowConfirm(true);
                 }}
-                aria-label={`Remove ${track.name} from favorites`}
+                aria-label={`Remove ${track.name ?? 'track'} from favorites`}
               >
                 <FaTrash />
               </button>
