@@ -22,7 +22,6 @@ import EditProfile from "./pages/EditProfile";
 import Tracks from "./pages/Tracks";
 import Community from "./pages/Community";
 import PublicProfile from "./pages/PublicProfile";
-import PublicUserTracks from "./pages/PublicUserTracks";
 import PostPage from "./pages/PostPage";
 
 import { apiGet, apiSend } from "./lib/api";
@@ -230,10 +229,6 @@ function AppContent() {
           <Route path="/community/:id" element={<PostPage />} />
 
           <Route path="/users/:userId" element={<PublicProfile />} />
-          <Route
-            path="/users/:userId/tracks"
-            element={<PublicUserTracks />}
-          />
         </Route>
       </Routes>
 
