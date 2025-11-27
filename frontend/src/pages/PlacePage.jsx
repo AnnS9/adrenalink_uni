@@ -352,39 +352,43 @@ export default function PlacePage({ isLoggedIn, userRole, currentUser }) {
         )}
 
         <div className="reviews-list">
-          {place.reviews?.map((review) => (
-            <div key={review.id} className="review">
-              {review.user_id ? (
-                <Link
-                  to={`/users/${review.user_id}`}
-                  className="review-author-link"
-                >
-                  
-                </Link>
-              ) : (
-                <strong>
-                 
-                </strong>
-              )}
-              <div className="review-stars">
-                {renderStars(Number(review.rating) || 0)}
-              </div>
-              <p>{review.text}</p>
-              <small>
-                {new Date(review.created_at).toLocaleDateString()}
-              </small>
-              <br />
-              {userRole === "admin" && (
-                <button
-                  className="delete-review"
-                  onClick={() => handleDeleteReview(review.id)}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          ))}
+    {place.reviews?.map((review) => (
+      <div key={review.id} className="review">
+        {review.user_id ? (
+          <Link
+            to={`/users/${review.user_id}`}
+            className="review-author-link"
+          >
+            {review.full_name || "User"} 
+          </Link>
+        ) : (
+          <strong>{review.full_name || "Anonymous"}</strong>
+        )}
+
+        <div className="review-stars">
+          {renderStars(Number(review.rating) || 0)}
         </div>
+
+        <p>{review.text}</p>
+
+        <small>{new Date(review.created_at).toLocaleDateString()}</small>
+
+        {userRole === "admin" && (
+          <button
+            className="delete-review"
+            onClick={() => handleDeleteReview(review.id)}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    ))}
+
+ 
+  {(!place.reviews || place.reviews.length === 0) && (
+    <p>No reviews yet.</p>
+  )}
+</div>
       </section>
     </div>
   );
